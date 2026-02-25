@@ -29,7 +29,6 @@ export async function POST(request: Request) {
       system: CAREER_COACH_SYSTEM_PROMPT,
       messages,
       temperature: 0.7,
-      maxTokens: 1000,
     });
 
     return result.toDataStreamResponse();
