@@ -74,17 +74,10 @@ export function CareerCoach() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.startsWith('0:"')) {
-            const textContent = line.slice(3, -1).replace(/\\n/g, "\n").replace(/\\"/g, '"');
-            fullContent += textContent;
-            setMessages((prev) =>
-              prev.map((m) => (m.id === assistantId ? { ...m, content: fullContent } : m))
-            );
-          }
-        }
+        fullContent += chunk;
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: fullContent } : m))
+        );
       }
     } catch {
       setMessages((prev) => [
