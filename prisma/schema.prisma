@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  cvProfiles        CVProfile[]
+  optimizations     Optimization[]
+  coverLetters      CoverLetter[]
+  jobSearches       JobSearch[]
+  createdCVs        CreatedCV[]
+  interviewSessions InterviewSession[]
+  skillGaps         SkillGap[]
+  linkedInProfiles  LinkedInProfile[]
+  cvVersions        CVVersion[]
+}
+
+model CVVersion {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String
+  cvText     String
+  sourceType String   @default("optimization")
+  sourceId   String?
+  atsScore   Int?
+  targetRole String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model CVProfile {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  originalText  String
+  fileName      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  optimizations Optimization[]
+
+  @@index([userId])
+}
+
+model JobPosting {
+  id              String   @id @default(cuid())
+  title           String
+  company         String?
+  description     String
+
+  // Extracted data from LLM analysis
+  requiredSkills  String   // JSON array
+  preferredSkills String   // JSON array
+  keywords        String   // JSON array
+  experienceLevel String?
+  industry        String?
+
+  createdAt       DateTime @default(now())
+
+  optimizations   Optimization[]
+  coverLetters    CoverLetter[]
+}
+
+model Optimization {
+  id              String     @id @default(cuid())
+  userId          String?
+  user            User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  cvProfileId     String?
+  cvProfile       CVProfile? @relation(fields: [cvProfileId], references: [id], onDelete: SetNull)
+
+  jobPostingId    String
+  jobPosting      JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  originalCV      String
+  optimizedCV     String
+
+  atsScoreBefore  Int
+  atsScoreAfter   Int
+  matchedKeywords String
+  addedKeywords   String
+  missingSkills   String
+  improvements    String
+
+  targetRole      String?
+  roleAdaptations String?
+
+  createdAt       DateTime   @default(now())
+
+  @@index([userId])
+  @@index([jobPostingId])
+}
+
+model CoverLetter {
+  id            String     @id @default(cuid())
+  userId        String?
+  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  jobPostingId  String
+  jobPosting    JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  content       String
+  tone          String     @default("professional")
+
+  createdAt     DateTime   @default(now())
+
+  @@index([userId])
+  @@index([jobPostingId])
+}
+
+model SkillGap {
+  id              String   @id @default(cuid())
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  missingSkill    String
+  category        String
+  importance      String
+
+  learningPath    String?
+  estimatedTime   String?
+
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ============================================
+// JOB SEARCH HISTORY
+// ============================================
+
+model JobSearch {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  keywords    String
+  location    String?
+  jobType     String?
+  resultCount Int      @default(0)
+
+  createdAt   DateTime @default(now())
+
+  results     JobSearchResult[]
+
+  @@index([userId])
+}
+
+model JobSearchResult {
+  id              String    @id @default(cuid())
+  jobSearchId     String
+  jobSearch       JobSearch @relation(fields: [jobSearchId], references: [id], onDelete: Cascade)
+
+  title           String
+  company         String
+  location        String
+  jobType         String?
+  postedAt        String?
+  url             String?
+  description     String?
+  salary          String?
+  experienceLevel String?
+  sector          String?
+
+  createdAt       DateTime  @default(now())
+
+  @@index([jobSearchId])
+}
+
+// ============================================
+// CREATED CV (FROM SCRATCH)
+// ============================================
+
+model CreatedCV {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  personalInfo  String
+  experiences   String
+  educations    String
+  skills        String
+  templateId    String   @default("modern")
+  title         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================
+// AI INTERVIEW SIMULATION
+// ============================================
+
+model InterviewSession {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  cvText          String
+  jobDescription  String
+  targetRole      String
+
+  status          String    @default("in_progress")
+  totalQuestions  Int       @default(5)
+  currentQuestion Int       @default(0)
+  overallScore    Float?
+
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  questions       InterviewQuestion[]
+
+  @@index([userId])
+}
+
+model InterviewQuestion {
+  id              String    @id @default(cuid())
+
+  sessionId       String
+  session         InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionNumber  Int
+  questionType    String
+  question        String
+  expectedTopics  String
+  difficulty      String
+
+  userAnswer      String?
+  score           Float?
+  feedback        String?
+  strengths       String?
+  improvements    String?
+  sampleAnswer    String?
+
+  answeredAt      DateTime?
+
+  @@index([sessionId])
+}
+
+// ============================================
+// LINKEDIN PROFILE INTEGRATION
+// ============================================
+
+model LinkedInProfile {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  fullName        String
+  headline        String?
+  location        String?
+  summary         String?
+
+  experience      String
+  education       String
+  skills          String
+  certifications  String?
+  languages       String?
+
+  sourceType      String    @default("pdf")
+  originalText    String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
