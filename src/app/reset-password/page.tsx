@@ -56,15 +56,15 @@ function ResetPasswordForm() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 rounded-sm mb-4">
-            <FileText className="w-6 h-6 text-white" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 dark:bg-white rounded-sm mb-4">
+            <FileText className="w-6 h-6 text-white dark:text-slate-900" />
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900">Yeni Şifre Belirle</h1>
-          <p className="text-slate-500 mt-2">Hesabınız için yeni bir şifre oluşturun.</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Yeni Şifre Belirle</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">Hesabınız için yeni bir şifre oluşturun.</p>
         </div>
 
         {/* Form */}
@@ -72,10 +72,10 @@ function ResetPasswordForm() {
           {success ? (
             <div className="text-center py-4">
               <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <h2 className="text-lg font-medium text-slate-900 mb-2">
+              <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
                 Şifre Güncellendi
               </h2>
-              <p className="text-sm text-slate-500 mb-4">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                 Şifreniz başarıyla değiştirildi. 3 saniye içinde giriş
                 sayfasına yönlendirileceksiniz.
               </p>
@@ -104,7 +104,7 @@ function ResetPasswordForm() {
                     disabled={isLoading}
                   />
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                   En az 8 karakter, bir büyük harf, bir küçük harf ve bir rakam
                 </p>
               </div>
@@ -127,8 +127,8 @@ function ResetPasswordForm() {
               </div>
 
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-sm">
-                  <p className="text-sm text-red-700">{error}</p>
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-sm">
+                  <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
                 </div>
               )}
 
@@ -149,7 +149,7 @@ function ResetPasswordForm() {
             </form>
           ) : (
             <div className="text-center py-4">
-              <p className="text-sm text-red-600 mb-4">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
               <Link
                 href="/forgot-password"
                 className="btn-primary inline-flex items-center gap-2"
@@ -164,7 +164,7 @@ function ResetPasswordForm() {
         <div className="mt-6 text-center">
           <Link
             href="/login"
-            className="text-sm text-slate-500 hover:text-slate-700 inline-flex items-center gap-1"
+            className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 inline-flex items-center gap-1"
           >
             <ArrowLeft className="w-4 h-4" />
             Giriş sayfasına dön
@@ -179,10 +179,10 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto" />
-            <p className="text-sm text-slate-500 mt-2">Yükleniyor...</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Yükleniyor...</p>
           </div>
         </main>
       }

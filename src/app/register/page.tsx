@@ -53,15 +53,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 rounded-sm mb-4">
-            <FileText className="w-6 h-6 text-white" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 dark:bg-white rounded-sm mb-4">
+            <FileText className="w-6 h-6 text-white dark:text-slate-900" />
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900">Hesap Oluştur</h1>
-          <p className="text-slate-500 mt-2">CV Optimizer&apos;a ücretsiz kayıt olun</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Hesap Oluştur</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">CV Optimizer&apos;a ücretsiz kayıt olun</p>
         </div>
 
         {/* Form */}
@@ -132,8 +132,8 @@ export default function RegisterPage() {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-sm">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-sm">
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             )}
 
@@ -154,9 +154,9 @@ export default function RegisterPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Zaten hesabınız var mı?{" "}
-              <Link href="/login" className="text-slate-900 font-medium hover:underline">
+              <Link href="/login" className="text-slate-900 dark:text-white font-medium hover:underline">
                 Giriş Yapın
               </Link>
             </p>
@@ -165,7 +165,7 @@ export default function RegisterPage() {
 
         {/* Skip */}
         <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
+          <Link href="/" className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
             Kayıt olmadan devam et →
           </Link>
         </div>
