@@ -11,6 +11,7 @@ import SkillsStep from "@/components/create-cv/SkillsStep";
 import PreviewStep from "@/components/create-cv/PreviewStep";
 import LinkedInUpload from "@/components/LinkedInUpload";
 import LinkedInManualForm from "@/components/LinkedInManualForm";
+import { CVScoreWidget } from "@/components/create-cv/CVScoreWidget";
 import {
   CreateCVFormData,
   CVPersonalInfo,
@@ -261,7 +262,8 @@ function CreateCVContent() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto flex gap-6">
+      <div className="flex-1 min-w-0">
       <div className="mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
@@ -503,6 +505,14 @@ function CreateCVContent() {
           >
             Sonraki →
           </button>
+        </div>
+      )}
+      </div>
+
+      {/* Score Widget Sidebar (hidden on preview step and mobile) */}
+      {currentStep < 4 && (
+        <div className="hidden lg:block w-64 flex-shrink-0">
+          <CVScoreWidget formData={formData} />
         </div>
       )}
     </div>
