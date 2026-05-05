@@ -33,6 +33,7 @@ const protectedApiRoutes = [
   "/api/dashboard/stats",
   "/api/job-alerts",
   "/api/notifications",
+  "/api/share-cv",
 ];
 
 // Rate limiting (in-memory, IP bazlı)
@@ -158,5 +159,6 @@ export const config = {
     "/api/analyze-job/:path*",
     "/api/job-alerts/:path*",
     "/api/notifications/:path*",
+    "/api/share-cv/:path*",
   ],
 };

@@ -4,13 +4,15 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { CareerCoach } from "@/components/CareerCoach";
 
-const authPages = ["/login", "/register"];
+const authPages = ["/login", "/register", "/forgot-password", "/reset-password"];
+const publicPrefixes = ["/share"];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = authPages.includes(pathname);
+  const isPublicPage = publicPrefixes.some((p) => pathname.startsWith(p));
 
-  if (isAuthPage) {
+  if (isAuthPage || isPublicPage) {
     return <>{children}</>;
   }
 

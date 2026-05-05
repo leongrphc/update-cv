@@ -198,10 +198,13 @@ model CreatedCV {
   skills        String
   templateId    String   @default("modern")
   title         String?
+  shareToken    String?  @unique
+  isPublic      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([userId])
+  @@index([shareToken])
 }
 
 // ============================================

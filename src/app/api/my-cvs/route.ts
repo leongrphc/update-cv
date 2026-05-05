@@ -70,6 +70,8 @@ export async function GET(request: NextRequest) {
         skillCount: skills.technical?.length || 0,
         createdAt: cv.createdAt.toISOString(),
         updatedAt: cv.updatedAt.toISOString(),
+        shareToken: cv.shareToken,
+        isPublic: cv.isPublic,
         personalInfo,
         experiences,
         educations,

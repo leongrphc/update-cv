@@ -17,6 +17,8 @@ import {
   Briefcase,
   GraduationCap,
   Code2,
+  Share2,
+  Check,
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
 
@@ -42,6 +44,8 @@ interface CreatedCVItem {
   skillCount: number;
   createdAt: string;
   updatedAt: string;
+  shareToken?: string | null;
+  isPublic?: boolean;
   personalInfo: Record<string, string>;
   experiences: Record<string, unknown>[];
   educations: Record<string, unknown>[];
@@ -58,6 +62,7 @@ export default function MyCVsPage() {
   const [page, setPage] = useState(1);
   const [optimizedTotal, setOptimizedTotal] = useState(0);
   const [createdTotal, setCreatedTotal] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const pageSize = 10;
 
   const fetchCVs = useCallback(async (p: number) => {
@@ -143,6 +148,35 @@ export default function MyCVsPage() {
       id: cv.id,
     }));
     router.push("/create-cv?edit=true");
+  };
+
+  const handleShare = async (cv: CreatedCVItem) => {
+    try {
+      const action = cv.isPublic ? "disable" : "enable";
+      const res = await fetch("/api/share-cv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cvId: cv.id, action }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCreatedCVs((prev) =>
+          prev.map((c) =>
+            c.id === cv.id
+              ? { ...c, shareToken: data.shareToken, isPublic: data.isPublic }
+              : c
+          )
+        );
+        if (data.isPublic && data.shareToken) {
+          const url = `${window.location.origin}/share/${data.shareToken}`;
+          await navigator.clipboard.writeText(url);
+          setCopiedId(cv.id);
+          setTimeout(() => setCopiedId(null), 2000);
+        }
+      }
+    } catch {
+      // ignore
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -295,6 +329,22 @@ export default function MyCVsPage() {
                       {cv.skillCount}
                     </span>
                   </div>
+                  <button
+                    onClick={() => handleShare(cv)}
+                    className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      cv.isPublic
+                        ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                    title={cv.isPublic ? "Paylaşımı kapat" : "Paylaş"}
+                  >
+                    {copiedId === cv.id ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Share2 className="w-4 h-4" />
+                    )}
+                    {copiedId === cv.id ? "Kopyalandı" : cv.isPublic ? "Paylaşıldı" : "Paylaş"}
+                  </button>
                   <button
                     onClick={() => editCreatedCV(cv)}
                     className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
