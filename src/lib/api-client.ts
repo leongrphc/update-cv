@@ -57,7 +57,6 @@ export async function apiFetch<T>(
         // Retry edilebilir hata mı?
         if (isRetryableError(response.status) && attempt < config.maxRetries) {
           const delay = calculateDelay(attempt, config);
-          console.log(`Retry attempt ${attempt + 1} after ${delay}ms...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
@@ -78,7 +77,6 @@ export async function apiFetch<T>(
       // Network hatası - retry et
       if (attempt < config.maxRetries) {
         const delay = calculateDelay(attempt, config);
-        console.log(`Network error, retry attempt ${attempt + 1} after ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }

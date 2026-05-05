@@ -30,8 +30,9 @@ const protectedApiRoutes = [
   "/api/linkedin",
   "/api/save-cv",
   "/api/my-cvs",
-  "/api/generate-pdf",
   "/api/dashboard/stats",
+  "/api/job-alerts",
+  "/api/notifications",
 ];
 
 // Rate limiting (in-memory, IP bazlı)
@@ -152,9 +153,10 @@ export const config = {
     "/api/linkedin/:path*",
     "/api/save-cv/:path*",
     "/api/my-cvs/:path*",
-    "/api/generate-pdf/:path*",
     "/api/dashboard/:path*",
     "/api/find-jobs/:path*",
     "/api/analyze-job/:path*",
+    "/api/job-alerts/:path*",
+    "/api/notifications/:path*",
   ],
 };

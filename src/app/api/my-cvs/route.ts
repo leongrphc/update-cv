@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parsePagination, createPaginatedResponse } from "@/lib/pagination";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
 
@@ -10,16 +11,24 @@ export async function GET() {
       return NextResponse.json({ success: true, cvs: [], createdCVs: [] });
     }
 
-    // Fetch optimized CVs
-    const optimizations = await prisma.optimization.findMany({
-      where: { userId: session.id },
-      orderBy: { createdAt: "desc" },
-      include: {
-        jobPosting: {
-          select: { title: true, company: true },
+    const { page, pageSize } = parsePagination(request.nextUrl.searchParams);
+    const skip = (page - 1) * pageSize;
+
+    // Fetch optimized CVs with pagination
+    const [optimizations, optimizedTotal] = await Promise.all([
+      prisma.optimization.findMany({
+        where: { userId: session.id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        include: {
+          jobPosting: {
+            select: { title: true, company: true },
+          },
         },
-      },
-    });
+      }),
+      prisma.optimization.count({ where: { userId: session.id } }),
+    ]);
 
     const cvs = optimizations.map((opt) => ({
       id: opt.id,
@@ -33,11 +42,16 @@ export async function GET() {
       originalCV: opt.originalCV,
     }));
 
-    // Fetch created CVs
-    const createdCVsRaw = await prisma.createdCV.findMany({
-      where: { userId: session.id },
-      orderBy: { createdAt: "desc" },
-    });
+    // Fetch created CVs with pagination
+    const [createdCVsRaw, createdTotal] = await Promise.all([
+      prisma.createdCV.findMany({
+        where: { userId: session.id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      prisma.createdCV.count({ where: { userId: session.id } }),
+    ]);
 
     const createdCVs = createdCVsRaw.map((cv) => {
       const personalInfo = JSON.parse(cv.personalInfo);
@@ -56,7 +70,6 @@ export async function GET() {
         skillCount: skills.technical?.length || 0,
         createdAt: cv.createdAt.toISOString(),
         updatedAt: cv.updatedAt.toISOString(),
-        // Full data for edit/download
         personalInfo,
         experiences,
         educations,
@@ -64,7 +77,11 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ success: true, cvs, createdCVs });
+    return NextResponse.json({
+      success: true,
+      cvs: createPaginatedResponse(cvs, optimizedTotal, { page, pageSize }),
+      createdCVs: createPaginatedResponse(createdCVs, createdTotal, { page, pageSize }),
+    });
   } catch (error) {
     console.error("My CVs fetch error:", error);
     return NextResponse.json(

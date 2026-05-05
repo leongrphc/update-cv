@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   FileText,
@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Search,
 } from "lucide-react";
+import Pagination from "@/components/Pagination";
 
 interface HistoryItem {
   id: string;
@@ -61,50 +62,59 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedSearch, setExpandedSearch] = useState<string | null>(null);
+  const [optimPage, setOptimPage] = useState(1);
+  const [optimTotal, setOptimTotal] = useState(0);
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const pageSize = 10;
 
-  useEffect(() => {
-    loadHistory();
-    loadJobSearches();
-  }, []);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async (page: number) => {
     try {
       setError(null);
-      const response = await fetch("/api/history");
+      const response = await fetch(`/api/history?page=${page}&pageSize=${pageSize}`);
       const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Not logged in - just show empty
           setHistory([]);
           return;
         }
         throw new Error(data.error || "Geçmiş yüklenemedi");
       }
 
-      setHistory(data.history || []);
+      setHistory(data.items || []);
+      setOptimTotal(data.total || 0);
     } catch (err) {
       console.error("History load error:", err);
       setError(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pageSize]);
 
-  const loadJobSearches = async () => {
+  const loadJobSearches = useCallback(async (page: number) => {
     try {
-      const response = await fetch("/api/job-searches");
+      const response = await fetch(`/api/job-searches?page=${page}&pageSize=${pageSize}`);
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setJobSearches(data.jobSearches || []);
+        setJobSearches(data.items || []);
+        setSearchTotal(data.total || 0);
       } else if (response.status === 401) {
         setJobSearches([]);
       }
     } catch {
       // API error
     }
-  };
+  }, [pageSize]);
+
+  useEffect(() => {
+    if (activeTab === "optimizations") {
+      loadHistory(optimPage);
+    } else {
+      loadJobSearches(searchPage);
+    }
+  }, [activeTab, optimPage, searchPage, loadHistory, loadJobSearches]);
 
   const deleteItem = async (id: string) => {
     try {
@@ -119,6 +129,7 @@ export default function HistoryPage() {
       }
 
       setHistory((prev) => prev.filter((item) => item.id !== id));
+      setOptimTotal((prev) => prev - 1);
     } catch (err) {
       console.error("Delete error:", err);
       alert(err instanceof Error ? err.message : "Silme işlemi başarısız");
@@ -139,6 +150,7 @@ export default function HistoryPage() {
       }
 
       setJobSearches((prev) => prev.filter((s) => s.id !== id));
+      setSearchTotal((prev) => prev - 1);
     } catch (err) {
       console.error("Delete job search error:", err);
       alert(err instanceof Error ? err.message : "Silme işlemi başarısız");
@@ -190,9 +202,10 @@ export default function HistoryPage() {
         await fetch(`/api/history?id=${item.id}`, { method: "DELETE" });
       }
       setHistory([]);
+      setOptimTotal(0);
     } catch {
       alert("Bazı kayıtlar silinemedi");
-      loadHistory();
+      loadHistory(1);
     }
   };
 
@@ -203,9 +216,10 @@ export default function HistoryPage() {
         await fetch(`/api/job-searches?id=${search.id}`, { method: "DELETE" });
       }
       setJobSearches([]);
+      setSearchTotal(0);
     } catch {
       alert("Bazı kayıtlar silinemedi");
-      loadJobSearches();
+      loadJobSearches(1);
     }
   };
 
@@ -218,6 +232,9 @@ export default function HistoryPage() {
       minute: "2-digit",
     });
   };
+
+  const optimTotalPages = Math.ceil(optimTotal / pageSize);
+  const searchTotalPages = Math.ceil(searchTotal / pageSize);
 
   if (isLoading) {
     return (
@@ -232,13 +249,13 @@ export default function HistoryPage() {
       id: "optimizations" as TabType,
       label: "CV Optimizations",
       icon: FileText,
-      count: history.length,
+      count: optimTotal,
     },
     {
       id: "job-searches" as TabType,
       label: "Job Searches",
       icon: Briefcase,
-      count: jobSearches.length,
+      count: searchTotal,
     },
   ];
 
@@ -280,7 +297,11 @@ export default function HistoryPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id === "optimizations") setOptimPage(1);
+                  else setSearchPage(1);
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
                   activeTab === tab.id
                     ? "border-slate-900 dark:border-white text-slate-900 dark:text-white"
@@ -313,7 +334,7 @@ export default function HistoryPage() {
             <AlertCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-700 dark:text-red-300">{error}</p>
             <button
-              onClick={loadHistory}
+              onClick={() => loadHistory(optimPage)}
               className="ml-auto text-sm text-red-600 dark:text-red-400 hover:underline"
             >
               Tekrar Dene
@@ -342,64 +363,71 @@ export default function HistoryPage() {
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {history.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-slate-900 dark:text-slate-50">
-                          {item.targetRole || "CV Optimization"}
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          <div className="flex items-center gap-1">
-                            <Target className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="text-sm text-slate-500 dark:text-slate-400">
-                              {item.atsScoreBefore}%
-                            </span>
-                            <span className="text-slate-400 mx-0.5">→</span>
-                            <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                              {item.atsScoreAfter}%
+            <>
+              <div className="space-y-3">
+                {history.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-slate-900 dark:text-slate-50">
+                            {item.targetRole || "CV Optimization"}
+                          </h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <div className="flex items-center gap-1">
+                              <Target className="w-3.5 h-3.5 text-slate-400" />
+                              <span className="text-sm text-slate-500 dark:text-slate-400">
+                                {item.atsScoreBefore}%
+                              </span>
+                              <span className="text-slate-400 mx-0.5">→</span>
+                              <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                                {item.atsScoreAfter}%
+                              </span>
+                            </div>
+                            <span className="flex items-center gap-1 text-xs text-slate-400">
+                              <Clock className="w-3 h-3" />
+                              {formatDate(item.createdAt)}
                             </span>
                           </div>
-                          <span className="flex items-center gap-1 text-xs text-slate-400">
-                            <Clock className="w-3 h-3" />
-                            {formatDate(item.createdAt)}
-                          </span>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => viewItem(item)}
-                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="View"
-                      >
-                        <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                      </button>
-                      <button
-                        onClick={() => deleteItem(item.id)}
-                        disabled={deletingId === item.id}
-                        className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                        title="Delete"
-                      >
-                        {deletingId === item.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-red-400" />
-                        ) : (
-                          <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => viewItem(item)}
+                          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                        </button>
+                        <button
+                          onClick={() => deleteItem(item.id)}
+                          disabled={deletingId === item.id}
+                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                          title="Delete"
+                        >
+                          {deletingId === item.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-red-400" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <Pagination
+                page={optimPage}
+                totalPages={optimTotalPages}
+                onPageChange={setOptimPage}
+              />
+            </>
           )}
         </>
       )}
@@ -424,137 +452,144 @@ export default function HistoryPage() {
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {jobSearches.map((search) => (
-                <div
-                  key={search.id}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all"
-                >
-                  {/* Search Header */}
+            <>
+              <div className="space-y-3">
+                {jobSearches.map((search) => (
                   <div
-                    className="p-5 cursor-pointer"
-                    onClick={() =>
-                      setExpandedSearch(expandedSearch === search.id ? null : search.id)
-                    }
+                    key={search.id}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                          <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-slate-900 dark:text-slate-50">
-                            {search.keywords}
-                          </h3>
-                          <div className="flex items-center gap-3 mt-1">
-                            {search.location && (
-                              <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                                <MapPin className="w-3 h-3" />
-                                {search.location}
-                              </span>
-                            )}
-                            {search.jobType && (
-                              <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                                <Briefcase className="w-3 h-3" />
-                                {search.jobType}
-                              </span>
-                            )}
-                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                              {search.resultCount} results
-                            </span>
-                            <span className="flex items-center gap-1 text-xs text-slate-400">
-                              <Clock className="w-3 h-3" />
-                              {formatDate(search.searchedAt)}
-                            </span>
+                    {/* Search Header */}
+                    <div
+                      className="p-5 cursor-pointer"
+                      onClick={() =>
+                        setExpandedSearch(expandedSearch === search.id ? null : search.id)
+                      }
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            repeatSearch(search);
-                          }}
-                          className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        >
-                          Search Again
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteJobSearch(search.id);
-                          }}
-                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
-                        </button>
-                        <svg
-                          className={`w-4 h-4 text-slate-400 transition-transform ${
-                            expandedSearch === search.id ? "rotate-180" : ""
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Expanded Jobs List */}
-                  {expandedSearch === search.id && search.jobs.length > 0 && (
-                    <div className="border-t border-slate-200 dark:border-slate-800">
-                      {search.jobs.map((job, index) => (
-                        <div
-                          key={job.id || index}
-                          className="px-5 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 last:border-b-0"
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                                {job.title}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                {job.company}
-                                {job.location ? ` · ${job.location}` : ""}
-                              </p>
+                          <div>
+                            <h3 className="font-medium text-slate-900 dark:text-slate-50">
+                              {search.keywords}
+                            </h3>
+                            <div className="flex items-center gap-3 mt-1">
+                              {search.location && (
+                                <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                                  <MapPin className="w-3 h-3" />
+                                  {search.location}
+                                </span>
+                              )}
+                              {search.jobType && (
+                                <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                                  <Briefcase className="w-3 h-3" />
+                                  {search.jobType}
+                                </span>
+                              )}
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                {search.resultCount} results
+                              </span>
+                              <span className="flex items-center gap-1 text-xs text-slate-400">
+                                <Clock className="w-3 h-3" />
+                                {formatDate(search.searchedAt)}
+                              </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0 ml-3">
-                            {job.description && (
-                              <button
-                                onClick={() => optimizeFromSearch(job)}
-                                className="px-2.5 py-1 text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-md hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
-                              >
-                                Optimize
-                              </button>
-                            )}
-                            {job.url && (
-                              <a
-                                href={job.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-                          </div>
                         </div>
-                      ))}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              repeatSearch(search);
+                            }}
+                            className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                          >
+                            Search Again
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteJobSearch(search.id);
+                            }}
+                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
+                          </button>
+                          <svg
+                            className={`w-4 h-4 text-slate-400 transition-transform ${
+                              expandedSearch === search.id ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+
+                    {/* Expanded Jobs List */}
+                    {expandedSearch === search.id && search.jobs.length > 0 && (
+                      <div className="border-t border-slate-200 dark:border-slate-800">
+                        {search.jobs.map((job, index) => (
+                          <div
+                            key={job.id || index}
+                            className="px-5 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 last:border-b-0"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                                  {job.title}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                  {job.company}
+                                  {job.location ? ` · ${job.location}` : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-3">
+                              {job.description && (
+                                <button
+                                  onClick={() => optimizeFromSearch(job)}
+                                  className="px-2.5 py-1 text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-md hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+                                >
+                                  Optimize
+                                </button>
+                              )}
+                              {job.url && (
+                                <a
+                                  href={job.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <Pagination
+                page={searchPage}
+                totalPages={searchTotalPages}
+                onPageChange={setSearchPage}
+              />
+            </>
           )}
         </>
       )}

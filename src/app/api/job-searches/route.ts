@@ -1,9 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import { parsePagination, createPaginatedResponse } from "@/lib/pagination";
+
+const postSchema = z.object({
+  keywords: z.string().min(1, "Anahtar kelime gerekli").max(200),
+  location: z.string().max(200).nullable().optional(),
+  jobType: z.string().max(50).nullable().optional(),
+  jobs: z.array(z.object({
+    title: z.string().optional(),
+    company: z.string().optional(),
+    location: z.string().optional(),
+    jobType: z.string().optional(),
+    postedAt: z.string().optional(),
+    url: z.string().url().optional().or(z.literal("")),
+    description: z.string().optional(),
+    salary: z.string().optional(),
+    experienceLevel: z.string().optional(),
+    sector: z.string().optional(),
+  })).max(25).default([]),
+});
+
+const deleteSchema = z.object({
+  id: z.string().min(1, "ID gerekli"),
+});
 
 // GET - Fetch job search history
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
 
@@ -14,24 +38,31 @@ export async function GET() {
       );
     }
 
-    const searches = await prisma.jobSearch.findMany({
-      where: { userId: session.id },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      include: {
-        results: {
-          select: {
-            id: true,
-            title: true,
-            company: true,
-            location: true,
-            jobType: true,
-            url: true,
-            description: true,
+    const { page, pageSize } = parsePagination(request.nextUrl.searchParams);
+    const skip = (page - 1) * pageSize;
+
+    const [searches, total] = await Promise.all([
+      prisma.jobSearch.findMany({
+        where: { userId: session.id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        include: {
+          results: {
+            select: {
+              id: true,
+              title: true,
+              company: true,
+              location: true,
+              jobType: true,
+              url: true,
+              description: true,
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.jobSearch.count({ where: { userId: session.id } }),
+    ]);
 
     const jobSearches = searches.map((s) => ({
       id: s.id,
@@ -43,7 +74,10 @@ export async function GET() {
       jobs: s.results,
     }));
 
-    return NextResponse.json({ success: true, jobSearches });
+    return NextResponse.json({
+      success: true,
+      ...createPaginatedResponse(jobSearches, total, { page, pageSize }),
+    });
   } catch (error) {
     console.error("Job search history fetch error:", error);
     return NextResponse.json(
@@ -65,14 +99,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { keywords, location, jobType, jobs } = await request.json();
-
-    if (!keywords) {
+    const body = await request.json();
+    const v = postSchema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "Keywords gerekli" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
+    const { keywords, location, jobType, jobs } = v.data;
 
     const jobSearch = await prisma.jobSearch.create({
       data: {
@@ -80,20 +115,9 @@ export async function POST(request: NextRequest) {
         keywords,
         location: location || null,
         jobType: jobType || null,
-        resultCount: jobs?.length || 0,
+        resultCount: jobs.length,
         results: {
-          create: (jobs || []).slice(0, 10).map((job: {
-            title?: string;
-            company?: string;
-            location?: string;
-            jobType?: string;
-            postedAt?: string;
-            url?: string;
-            description?: string;
-            salary?: string;
-            experienceLevel?: string;
-            sector?: string;
-          }) => ({
+          create: jobs.slice(0, 10).map((job) => ({
             title: job.title || "",
             company: job.company || "",
             location: job.location || "",
@@ -132,18 +156,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
+    const v = deleteSchema.safeParse({ id: searchParams.get("id") });
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "ID gerekli" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
 
     // Verify ownership
     const search = await prisma.jobSearch.findFirst({
-      where: { id, userId: session.id },
+      where: { id: v.data.id, userId: session.id },
     });
 
     if (!search) {
@@ -153,7 +176,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await prisma.jobSearch.delete({ where: { id } });
+    await prisma.jobSearch.delete({ where: { id: v.data.id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

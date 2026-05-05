@@ -1,18 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { enhanceCVContent } from "@/lib/llm-client";
+import { z } from "zod";
 
-export async function POST(request: Request) {
+const MAX_TEXT = 50_000;
+
+const schema = z.object({
+  content: z.string().min(1, "İçerik gerekli").max(MAX_TEXT),
+  contentType: z.enum(["bullet", "summary", "title"]),
+  context: z.string().max(MAX_TEXT).optional(),
+});
+
+export async function POST(request: NextRequest) {
   try {
-    const { content, contentType, context } = await request.json();
-
-    if (!content || !contentType) {
+    const body = await request.json();
+    const v = schema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "content ve contentType gereklidir" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
 
-    const result = await enhanceCVContent(content, contentType, context);
+    const result = await enhanceCVContent(v.data.content, v.data.contentType, v.data.context);
 
     return NextResponse.json({
       success: true,

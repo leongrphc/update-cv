@@ -1,6 +1,16 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText } from "ai";
 import { CAREER_COACH_SYSTEM_PROMPT } from "@/lib/prompts";
+import { z } from "zod";
+
+const MAX_TEXT = 50_000;
+
+const schema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant", "system"]),
+    content: z.string().min(1).max(MAX_TEXT),
+  })).min(1, "Mesaj gerekli").max(50),
+});
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -8,10 +18,10 @@ const google = createGoogleGenerativeAI({
 
 export async function POST(request: Request) {
   try {
-    const { messages } = await request.json();
-
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: "Mesaj gerekli" }), {
+    const body = await request.json();
+    const v = schema.safeParse(body);
+    if (!v.success) {
+      return new Response(JSON.stringify({ error: v.error.errors[0].message }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -27,7 +37,7 @@ export async function POST(request: Request) {
     const result = await streamText({
       model: google("models/gemini-2.5-flash"),
       system: CAREER_COACH_SYSTEM_PROMPT,
-      messages,
+      messages: v.data.messages,
       temperature: 0.7,
     });
 

@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import { parsePagination, createPaginatedResponse } from "@/lib/pagination";
+
+const deleteSchema = z.object({
+  id: z.string().min(1, "ID gerekli"),
+});
 
 // GET - Fetch optimization history
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
 
@@ -14,18 +20,26 @@ export async function GET() {
       );
     }
 
-    const optimizations = await prisma.optimization.findMany({
-      where: { userId: session.id },
-      orderBy: { createdAt: "desc" },
-      include: {
-        jobPosting: {
-          select: {
-            title: true,
-            company: true,
+    const { page, pageSize } = parsePagination(request.nextUrl.searchParams);
+    const skip = (page - 1) * pageSize;
+
+    const [optimizations, total] = await Promise.all([
+      prisma.optimization.findMany({
+        where: { userId: session.id },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+        include: {
+          jobPosting: {
+            select: {
+              title: true,
+              company: true,
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.optimization.count({ where: { userId: session.id } }),
+    ]);
 
     const history = optimizations.map((opt) => ({
       id: opt.id,
@@ -44,7 +58,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      history,
+      ...createPaginatedResponse(history, total, { page, pageSize }),
     });
   } catch (error) {
     console.error("History fetch error:", error);
@@ -68,18 +82,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
+    const v = deleteSchema.safeParse({ id: searchParams.get("id") });
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "ID gerekli" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
 
     // Verify ownership before deleting
     const optimization = await prisma.optimization.findFirst({
-      where: { id, userId: session.id },
+      where: { id: v.data.id, userId: session.id },
     });
 
     if (!optimization) {
@@ -89,7 +102,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await prisma.optimization.delete({ where: { id } });
+    await prisma.optimization.delete({ where: { id: v.data.id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

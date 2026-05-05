@@ -1,4 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const schema = z.object({
+  keywords: z.string().min(1, "Anahtar kelime gerekli").max(200),
+  location: z.string().max(200).optional(),
+  jobType: z.enum(["full-time", "part-time", "contract", "internship"]).optional(),
+  limit: z.number().int().min(1).max(25).default(10),
+});
 
 interface ApifyJobItem {
   title?: string;
@@ -48,14 +56,15 @@ function buildLinkedInSearchUrl(
 
 export async function POST(request: NextRequest) {
   try {
-    const { keywords, location, jobType, limit = 10 } = await request.json();
-
-    if (!keywords) {
+    const body = await request.json();
+    const v = schema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "Anahtar kelime gerekli" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
+    const { keywords, location, jobType, limit } = v.data;
 
     const apiToken = process.env.APIFY_API_TOKEN;
     if (!apiToken) {
@@ -68,7 +77,6 @@ export async function POST(request: NextRequest) {
     const searchUrl = buildLinkedInSearchUrl(keywords, location, jobType);
 
     // Build Apify input with direct parameters so location actually works
-    // The actor defaults to "New York" if location is not explicitly set
     const apifyInput: Record<string, unknown> = {
       startUrls: [searchUrl],
       maxItems: Math.min(limit, 25),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -18,6 +18,7 @@ import {
   GraduationCap,
   Code2,
 } from "lucide-react";
+import Pagination from "@/components/Pagination";
 
 interface CVItem {
   id: string;
@@ -54,44 +55,51 @@ export default function MyCVsPage() {
   const [createdCVs, setCreatedCVs] = useState<CreatedCVItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "created" | "optimized">("all");
+  const [page, setPage] = useState(1);
+  const [optimizedTotal, setOptimizedTotal] = useState(0);
+  const [createdTotal, setCreatedTotal] = useState(0);
+  const pageSize = 10;
+
+  const fetchCVs = useCallback(async (p: number) => {
+    try {
+      const res = await fetch(`/api/my-cvs?page=${p}&pageSize=${pageSize}`);
+      const data = await res.json();
+      if (data.success) {
+        setCvs(data.cvs?.items || []);
+        setOptimizedTotal(data.cvs?.total || 0);
+        setCreatedCVs(data.createdCVs?.items || []);
+        setCreatedTotal(data.createdCVs?.total || 0);
+      }
+    } catch {
+      // Try sessionStorage fallback
+      const stored = sessionStorage.getItem("optimizationResult");
+      if (stored) {
+        try {
+          const result = JSON.parse(stored);
+          setCvs([
+            {
+              id: "local-1",
+              targetRole: result.targetRole || "CV Optimization",
+              company: null,
+              atsScoreBefore: result.atsScore?.before || 0,
+              atsScoreAfter: result.atsScore?.after || 0,
+              createdAt: new Date().toISOString(),
+              optimizedCV: result.optimizedCV || "",
+              originalCV: result.originalCV || "",
+            },
+          ]);
+        } catch {
+          // ignore
+        }
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [pageSize]);
 
   useEffect(() => {
-    const fetchCVs = async () => {
-      try {
-        const res = await fetch("/api/my-cvs");
-        const data = await res.json();
-        if (data.success) {
-          setCvs(data.cvs || []);
-          setCreatedCVs(data.createdCVs || []);
-        }
-      } catch {
-        // Try sessionStorage fallback
-        const stored = sessionStorage.getItem("optimizationResult");
-        if (stored) {
-          try {
-            const result = JSON.parse(stored);
-            setCvs([
-              {
-                id: "local-1",
-                targetRole: result.targetRole || "CV Optimization",
-                company: null,
-                atsScoreBefore: result.atsScore?.before || 0,
-                atsScoreAfter: result.atsScore?.after || 0,
-                createdAt: new Date().toISOString(),
-                optimizedCV: result.optimizedCV || "",
-                originalCV: result.originalCV || "",
-              },
-            ]);
-          } catch {
-            // ignore
-          }
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCVs();
-  }, []);
+    fetchCVs(page);
+  }, [page, fetchCVs]);
 
   const filteredCvs = cvs.filter(
     (cv) =>
@@ -160,9 +168,12 @@ export default function MyCVsPage() {
     }
   };
 
-  const totalCount = cvs.length + createdCVs.length;
+  const totalCount = optimizedTotal + createdTotal;
   const showCreated = activeTab === "all" || activeTab === "created";
   const showOptimized = activeTab === "all" || activeTab === "optimized";
+  const totalPages = Math.ceil(
+    (activeTab === "created" ? createdTotal : activeTab === "optimized" ? optimizedTotal : totalCount) / pageSize
+  );
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -199,12 +210,12 @@ export default function MyCVsPage() {
         <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
           {[
             { id: "all" as const, label: "Tümü", count: totalCount },
-            { id: "created" as const, label: "Oluşturulan", count: createdCVs.length },
-            { id: "optimized" as const, label: "Optimize", count: cvs.length },
+            { id: "created" as const, label: "Oluşturulan", count: createdTotal },
+            { id: "optimized" as const, label: "Optimize", count: optimizedTotal },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); setPage(1); }}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 activeTab === tab.id
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
@@ -399,6 +410,15 @@ export default function MyCVsPage() {
               )}
             </div>
           ) : null}
+
+          {/* Pagination */}
+          {!searchQuery && totalPages > 1 && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       )}
     </div>

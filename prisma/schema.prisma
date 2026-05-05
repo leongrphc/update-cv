@@ -24,6 +24,9 @@ model User {
   skillGaps         SkillGap[]
   linkedInProfiles  LinkedInProfile[]
   cvVersions        CVVersion[]
+  passwordResets    PasswordReset[]
+  jobAlerts         JobAlert[]
+  notifications     Notification[]
 }
 
 model CVVersion {
@@ -278,4 +281,63 @@ model LinkedInProfile {
   updatedAt       DateTime  @updatedAt
 
   @@index([userId])
+}
+
+// ============================================
+// PASSWORD RESET
+// ============================================
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================
+// JOB ALERTS & NOTIFICATIONS
+// ============================================
+
+model JobAlert {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  keywords    String
+  location    String?
+  jobType     String?
+  isActive    Boolean  @default(true)
+  lastChecked DateTime?
+
+  createdAt   DateTime @default(now())
+
+  notifications Notification[]
+
+  @@index([userId])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  jobAlertId  String?
+  jobAlert    JobAlert? @relation(fields: [jobAlertId], references: [id], onDelete: SetNull)
+
+  type        String   @default("job_match")
+  title       String
+  message     String
+  jobUrl      String?
+  isRead      Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([jobAlertId])
 }

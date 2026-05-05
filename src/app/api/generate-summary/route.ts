@@ -1,21 +1,38 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { generateCVSummary } from "@/lib/llm-client";
+import { z } from "zod";
 
-export async function POST(request: Request) {
+const schema = z.object({
+  personalInfo: z.object({
+    fullName: z.string().min(1, "Ad gerekli"),
+    title: z.string().min(1, "Ünvan gerekli"),
+  }),
+  experiences: z.array(z.object({
+    position: z.string(),
+    company: z.string(),
+    bullets: z.array(z.string()),
+  })).default([]),
+  skills: z.object({
+    technical: z.array(z.string()),
+    soft: z.array(z.string()),
+  }).default({ technical: [], soft: [] }),
+});
+
+export async function POST(request: NextRequest) {
   try {
-    const { personalInfo, experiences, skills } = await request.json();
-
-    if (!personalInfo?.fullName || !personalInfo?.title) {
+    const body = await request.json();
+    const v = schema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "Kişisel bilgiler gereklidir" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
 
     const result = await generateCVSummary(
-      personalInfo,
-      experiences || [],
-      skills || { technical: [], soft: [] }
+      v.data.personalInfo,
+      v.data.experiences,
+      v.data.skills
     );
 
     return NextResponse.json({

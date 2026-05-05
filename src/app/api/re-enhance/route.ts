@@ -1,26 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reEnhanceCV } from "@/lib/llm-client";
-import type { EnhanceType } from "@/types";
+import { z } from "zod";
+
+const MAX_TEXT = 50_000;
+
+const schema = z.object({
+  optimizedCV: z.string().min(1, "Optimize edilmiş CV gerekli").max(MAX_TEXT),
+  jobDescription: z.string().min(1, "İş ilanı gerekli").max(MAX_TEXT),
+  enhanceType: z.enum(["metrics", "summary", "keywords"]),
+  targetRole: z.string().max(200).optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { optimizedCV, jobDescription, enhanceType, targetRole } = body;
-
-    if (!optimizedCV || !jobDescription || !enhanceType) {
+    const v = schema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "Optimize edilmiş CV, iş ilanı ve güçlendirme tipi gerekli" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
-
-    const validTypes: EnhanceType[] = ["metrics", "summary", "keywords"];
-    if (!validTypes.includes(enhanceType)) {
-      return NextResponse.json(
-        { success: false, error: "Geçersiz güçlendirme tipi" },
-        { status: 400 }
-      );
-    }
+    const { optimizedCV, jobDescription, enhanceType, targetRole } = v.data;
 
     const hasOpenAI = !!process.env.OPENAI_API_KEY;
     const hasGoogle = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;

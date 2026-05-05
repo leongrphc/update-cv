@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeJob } from "@/lib/llm-client";
+import { z } from "zod";
+
+const MAX_TEXT = 50_000;
+
+const schema = z.object({
+  jobDescription: z.string().min(1, "İş ilanı gerekli").max(MAX_TEXT),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { jobDescription } = body;
-
-    if (!jobDescription) {
+    const v = schema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { success: false, error: "İş ilanı gerekli" },
+        { success: false, error: v.error.errors[0].message },
         { status: 400 }
       );
     }
 
-    const result = await analyzeJob(jobDescription);
+    const result = await analyzeJob(v.data.jobDescription);
 
     return NextResponse.json({
       success: true,

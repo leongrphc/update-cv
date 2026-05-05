@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+
+const sessionIdSchema = z.string().min(1, "Session ID gerekli");
 
 export async function GET(
   request: NextRequest,
@@ -7,9 +10,16 @@ export async function GET(
 ) {
   try {
     const { sessionId } = await params;
+    const v = sessionIdSchema.safeParse(sessionId);
+    if (!v.success) {
+      return NextResponse.json(
+        { error: v.error.errors[0].message },
+        { status: 400 }
+      );
+    }
 
     const session = await prisma.interviewSession.findUnique({
-      where: { id: sessionId },
+      where: { id: v.data },
       include: {
         questions: {
           orderBy: { questionNumber: "asc" },

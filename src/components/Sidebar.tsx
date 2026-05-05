@@ -20,6 +20,8 @@ import {
   BarChart3,
   Clock,
   GitBranch,
+  Bell,
+  BellRing,
 } from "lucide-react";
 
 interface SessionUser {
@@ -39,6 +41,8 @@ const navConfig = [
   { href: "/compare", key: "compare" as const, icon: BarChart3 },
   { href: "/history", key: "history" as const, icon: Clock },
   { href: "/cv-versions", key: "versions" as const, icon: GitBranch },
+  { href: "/job-alerts", key: "jobAlerts" as const, icon: BellRing },
+  { href: "/notifications", key: "notifications" as const, icon: Bell },
   { href: "/settings", key: "settings" as const, icon: Settings },
 ];
 
@@ -49,6 +53,7 @@ export function Sidebar() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -66,6 +71,22 @@ export function Sidebar() {
     };
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/notifications");
+        const data = await res.json();
+        if (data.success) setUnreadCount(data.unreadCount);
+      } catch {
+        // ignore
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -100,6 +121,7 @@ export function Sidebar() {
             const Icon = item.icon;
             const active = isActive(item.href);
             const label = t.sidebar[item.key];
+            const showBadge = item.href === "/notifications" && unreadCount > 0;
             return (
               <li key={item.href}>
                 <Link
@@ -112,7 +134,12 @@ export function Sidebar() {
                   }`}
                 >
                   <Icon className="w-[18px] h-[18px]" />
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {showBadge && (
+                    <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

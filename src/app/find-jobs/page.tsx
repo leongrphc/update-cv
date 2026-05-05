@@ -13,6 +13,7 @@ import {
   Briefcase,
   AlertCircle,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 interface Job {
   id: string;
@@ -30,6 +31,7 @@ interface Job {
 
 export default function FindJobsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [keywords, setKeywords] = useState("");
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("");
@@ -78,10 +80,10 @@ export default function FindJobsPage() {
           // Save failed silently - user might not be logged in
         }
       } else {
-        setError(data.error || "Failed to fetch jobs");
+        setError(data.error || t.findJobs.errorFetchJobs);
       }
     } catch {
-      setError("Failed to connect to the server");
+      setError(t.findJobs.errorConnection);
     } finally {
       setIsLoading(false);
     }
@@ -104,10 +106,10 @@ export default function FindJobsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Find Jobs
+          {t.findJobs.title}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">
-          Search LinkedIn for jobs that match your skills and experience.
+          {t.findJobs.subtitle}
         </p>
       </div>
 
@@ -118,7 +120,7 @@ export default function FindJobsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Job title, keyword, or company"
+              placeholder={t.findJobs.keywordPlaceholder}
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -129,7 +131,7 @@ export default function FindJobsPage() {
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Location or Remote"
+              placeholder={t.findJobs.locationPlaceholder}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -141,11 +143,11 @@ export default function FindJobsPage() {
             onChange={(e) => setJobType(e.target.value)}
             className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900/10 dark:focus:ring-white/10"
           >
-            <option value="">All Types</option>
-            <option value="full-time">Full-time</option>
-            <option value="part-time">Part-time</option>
-            <option value="contract">Contract</option>
-            <option value="internship">Internship</option>
+            <option value="">{t.findJobs.allTypes}</option>
+            <option value="full-time">{t.findJobs.fullTime}</option>
+            <option value="part-time">{t.findJobs.partTime}</option>
+            <option value="contract">{t.findJobs.contract}</option>
+            <option value="internship">{t.findJobs.internship}</option>
           </select>
           <button
             onClick={handleSearch}
@@ -155,10 +157,10 @@ export default function FindJobsPage() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Searching...
+                {t.findJobs.searching}
               </>
             ) : (
-              "Search"
+              t.findJobs.search
             )}
           </button>
         </div>
@@ -249,7 +251,7 @@ export default function FindJobsPage() {
                       className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
                     >
                       <Target className="w-3.5 h-3.5" />
-                      Optimize
+                      {t.findJobs.optimize}
                     </button>
                   )}
                   {job.url && (
@@ -258,7 +260,7 @@ export default function FindJobsPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                      title="View on LinkedIn"
+                      title={t.findJobs.viewOnLinkedIn}
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
@@ -275,7 +277,7 @@ export default function FindJobsPage() {
         <div className="text-center p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
           <Briefcase className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            No jobs found. Try different keywords or location.
+            {t.findJobs.noJobsFound}
           </p>
         </div>
       )}
@@ -285,10 +287,10 @@ export default function FindJobsPage() {
         <div className="text-center p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-dashed rounded-xl">
           <Search className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
           <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
-            Search for Jobs
+            {t.findJobs.searchForJobs}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            Enter keywords like job title, skills, or company name to search LinkedIn for matching positions. You can then optimize your CV for any job directly.
+            {t.findJobs.searchForJobsDesc}
           </p>
         </div>
       )}

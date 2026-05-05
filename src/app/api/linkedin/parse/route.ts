@@ -1,20 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseLinkedInProfile } from "@/lib/llm-client";
+import { z } from "zod";
+
+const MAX_TEXT = 50_000;
+
+const schema = z.object({
+  pdfText: z.string().min(1, "LinkedIn PDF metni gerekli").max(MAX_TEXT),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { pdfText } = body;
-
-    if (!pdfText) {
+    const v = schema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { error: "LinkedIn PDF metni gereklidir" },
+        { error: v.error.errors[0].message },
         { status: 400 }
       );
     }
 
     // Parse LinkedIn profile using LLM
-    const profile = await parseLinkedInProfile(pdfText);
+    const profile = await parseLinkedInProfile(v.data.pdfText);
 
     return NextResponse.json({
       success: true,

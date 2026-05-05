@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { evaluateInterviewAnswer } from "@/lib/llm-client";
+import { z } from "zod";
+
+const MAX_TEXT = 50_000;
+
+const schema = z.object({
+  sessionId: z.string().min(1, "Session ID gerekli"),
+  questionId: z.string().min(1, "Soru ID gerekli"),
+  answer: z.string().min(1, "Cevap gerekli").max(MAX_TEXT),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { sessionId, questionId, answer } = body;
-
-    if (!sessionId || !questionId || !answer) {
+    const v = schema.safeParse(body);
+    if (!v.success) {
       return NextResponse.json(
-        { error: "Session ID, soru ID ve cevap gereklidir" },
+        { error: v.error.errors[0].message },
         { status: 400 }
       );
     }
+    const { sessionId, questionId, answer } = v.data;
 
     // Get session and question
     const session = await prisma.interviewSession.findUnique({
