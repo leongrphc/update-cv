@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { optimizeCV } from "@/lib/llm-client";
+import { scoreCV } from "@/lib/ats-scorer";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
@@ -44,6 +45,17 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
 
     const result = await optimizeCV(cvText, jobDescription, targetRole, options);
+
+    // Compute deterministic ATS scores (overrides LLM-generated scores)
+    const allKeywords = [
+      ...(result.keywords?.matched || []),
+      ...(result.keywords?.added || []),
+    ];
+    const beforeScore = scoreCV(cvText, { matchedKeywords: allKeywords });
+    const afterScore = scoreCV(result.optimizedCV || "", { matchedKeywords: allKeywords });
+
+    result.atsScore = { before: beforeScore.total, after: afterScore.total };
+    (result as any).atsBreakdown = { before: beforeScore, after: afterScore };
 
     // Save to database
     try {

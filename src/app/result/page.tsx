@@ -18,8 +18,10 @@ import {
   Users,
   Send,
   Award,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import type { OptimizationResult, PDFTemplateId, ProTip, EnhanceType } from "@/types";
+import type { OptimizationResult, PDFTemplateId, ProTip, EnhanceType, ATSScoreResult } from "@/types";
 
 const PDFDownloadButton = dynamic(
   () => import("@/components/PDFDownloadButton"),
@@ -132,6 +134,7 @@ export default function ResultPage() {
   const [selectedTemplate, setSelectedTemplate] =
     useState<PDFTemplateId>("modern");
   const [enhancingType, setEnhancingType] = useState<EnhanceType | null>(null);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("optimizationResult");
@@ -264,6 +267,15 @@ export default function ResultPage() {
               style={{ width: `${result.atsScore.after}%` }}
             />
           </div>
+          {(result as any).atsBreakdown?.after && (
+            <button
+              onClick={() => setShowBreakdown(!showBreakdown)}
+              className="flex items-center gap-1 mt-3 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+            >
+              {showBreakdown ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {showBreakdown ? "Detayları Gizle" : "Detayları Göster"}
+            </button>
+          )}
         </div>
 
         <div className="card-elevated">
@@ -300,6 +312,65 @@ export default function ResultPage() {
           </div>
         </div>
       </div>
+
+      {/* ATS Breakdown Detail */}
+      {showBreakdown && (result as any).atsBreakdown?.after && (
+        <div className="mb-8 card-elevated animate-fade-in">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
+            ATS Puan Detayı
+          </h3>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {([
+              { key: "keywordScore", label: "Anahtar Kelime", max: 20 },
+              { key: "sectionHeaderScore", label: "Bölüm Başlıkları", max: 15 },
+              { key: "bulletStructureScore", label: "Madde Yapısı", max: 15 },
+              { key: "quantifiedResultsScore", label: "Sayısal Sonuçlar", max: 15 },
+              { key: "lengthScore", label: "Uzunluk", max: 15 },
+              { key: "formattingScore", label: "Biçimlendirme", max: 20 },
+            ] as const).map((item) => {
+              const afterVal = (result as any).atsBreakdown.after.breakdown[item.key] as number;
+              const beforeVal = (result as any).atsBreakdown.before.breakdown[item.key] as number;
+              const pct = Math.round((afterVal / item.max) * 100);
+              return (
+                <div key={item.key} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-600 dark:text-slate-400">{item.label}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {afterVal}/{item.max}
+                      {beforeVal !== afterVal && (
+                        <span className="text-emerald-500 ml-1">
+                          (+{afterVal - beforeVal})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${
+                        pct >= 80 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-red-500"
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {(result as any).atsBreakdown.after.suggestions?.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Öneriler</p>
+              <ul className="space-y-1">
+                {(result as any).atsBreakdown.after.suggestions.slice(0, 5).map((s: string, i: number) => (
+                  <li key={i} className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
+                    <span className="text-amber-500 mt-0.5">•</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Pro Tips */}
       {result.proTips && result.proTips.length > 0 && (

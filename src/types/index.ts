@@ -61,6 +61,10 @@ export interface OptimizationResult {
   roleAdaptations: string[];
   keywords: KeywordAnalysis;
   atsScore: ATSScore;
+  atsBreakdown?: {
+    before: ATSScoreResult;
+    after: ATSScoreResult;
+  };
   skillGaps: SkillGapItem[];
   proTips?: ProTip[];
   options?: OptimizationOptions;
@@ -75,6 +79,22 @@ export interface KeywordAnalysis {
 export interface ATSScore {
   before: number;
   after: number;
+}
+
+export interface ATSScoreBreakdown {
+  keywordScore: number;        // 0-20
+  sectionHeaderScore: number;  // 0-15
+  bulletStructureScore: number; // 0-15
+  quantifiedResultsScore: number; // 0-15
+  lengthScore: number;         // 0-15
+  formattingScore: number;     // 0-20
+}
+
+export interface ATSScoreResult {
+  total: number;               // 0-100
+  breakdown: ATSScoreBreakdown;
+  issues: string[];
+  suggestions: string[];
 }
 
 export interface SkillGapItem {
