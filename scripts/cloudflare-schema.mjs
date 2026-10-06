@@ -12,6 +12,36 @@ export function parseWranglerJson(output) {
   return result;
 }
 
+// Native Prisma SQLite writes milliseconds; Prisma 5's D1 WASM engine reads ISO
+// strings. Normalize only declared DateTime columns, retaining the exact instant.
+export function dateTimeColumns(objects) {
+  const tables = new Set(objects.map(({ name }) => name));
+  const baseline = readFileSync(resolve("prisma/migrations/20260505000000_baseline/migration.sql"), "utf8");
+  return [...baseline.matchAll(/CREATE TABLE "([^"]+)" \(([\s\S]*?)\n\);/g)]
+    .filter(([, table]) => tables.has(table))
+    .flatMap(([, table, definition]) => [...definition.matchAll(/"([^"]+)" DATETIME/g)]
+      .map(([, column]) => ({ table, column })));
+}
+
+export function dateTimeInspectionQuery(columns) {
+  return columns.map(({ table, column }) => `SELECT '${table}' AS table_name, '${column}' AS column_name,
+    COUNT(*) AS numeric_count,
+    COALESCE(SUM(CASE WHEN strftime('%Y-%m-%dT%H:%M:%fZ', "${column}" / 1000.0, 'unixepoch') IS NULL THEN 1 ELSE 0 END), 0) AS invalid_count
+    FROM "${table}" WHERE typeof("${column}") IN ('integer', 'real')`).join("\nUNION ALL\n");
+}
+
+export function buildDateTimePlan(inspections) {
+  if (inspections.some(({ invalid_count }) => invalid_count > 0)) {
+    throw new Error("A legacy timestamp is outside the supported date range; refusing conversion.");
+  }
+  return inspections.filter(({ numeric_count }) => numeric_count > 0).map(({ table_name: table, column_name: column }) => {
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(table) || !/^[A-Za-z][A-Za-z0-9_]*$/.test(column)) {
+      throw new Error("Invalid DateTime column identifier.");
+    }
+    return `UPDATE "${table}" SET "${column}" = strftime('%Y-%m-%dT%H:%M:%fZ', "${column}" / 1000.0, 'unixepoch') WHERE typeof("${column}") IN ('integer', 'real');`;
+  });
+}
+
 // D1's first deployment predates Prisma migration history. Reconcile only the
 // additive statements already reviewed in the repository's migrations.
 export function buildSchemaPlan(objects, cvColumns) {

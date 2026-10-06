@@ -84,7 +84,7 @@ npx opennextjs-cloudflare deploy
 node scripts/check-cloudflare.mjs https://cv.mozkan.com.tr
 ```
 
-Wrangler hesabına giriş yapılmış olmalıdır. Veritabanı güncellemesi yalnızca repodaki eksik tablo, indeks ve sütunları ekler; mevcut kayıtları silmez. Değişiklikten önce `.agent/cloudflare/` altında SQL yedeği alır ve güncellemeyi doğrular. Bu klasör kişisel veriler içerebilir; Git'e gönderilmez. Aynı komut tekrar çalıştırılabilir. Standart Prisma migration komutları yalnızca yerel SQLite içindir.
+Wrangler hesabına giriş yapılmış olmalıdır. Veritabanı güncellemesi repodaki eksik tablo, indeks ve sütunları ekler; eski native SQLite kayıtlarının sayısal DateTime alanlarını D1 istemcisinin okuyabildiği UTC ISO tarih biçimine çevirir. Tarihin milisaniyesi korunur; mevcut ISO tarihler, şifreler ve CV içeriği değiştirilmez, kayıt silinmez. Değişiklikten önce `.agent/cloudflare/` altında SQL yedeği alır ve güncellemeyi doğrular. Bu klasör kişisel veriler içerebilir; Git'e gönderilmez. Aynı komut tekrar çalıştırılabilir. Standart Prisma migration komutları yalnızca yerel SQLite içindir.
 
 OpenNext yerel `.env` değerlerini derlemeye kopyalar; `build:cloudflare` sunucu değerlerini paketten çıkarır. Canlı `JWT_SECRET`, AI, Apify ve SMTP anahtarları Cloudflare Worker secrets olarak tutulmalıdır. Mevcut secrets ve alan adı korunur. `APP_URL` canlı HTTPS adresidir. Yerel Worker önizlemesinde `.dev.vars` içine yalnızca test anahtarlarını koyun, `node scripts/migrate-cloudflare.mjs --apply` ile yerel D1'i hazırlayın ve `npm run preview:cloudflare` çalıştırın.
 

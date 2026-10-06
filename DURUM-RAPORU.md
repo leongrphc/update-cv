@@ -2,6 +2,8 @@
 
 6 Ekim 2026. Proje mevcut klasöre klonlandı; geliştirmeler sırayla commit edilerek `main` dalına gönderildi.
 
+Giriş/kayıt hatasının kök nedeni bulundu: Eski native SQLite hesap ve CV kayıtlarındaki DateTime alanları sayısal milisaniye olarak saklanmış; Prisma D1 WASM istemcisi bunları okurken `Could not convert ... createdAt ... DateTime` hatası veriyor. Yanlış şifreyle eski hesaba giriş 401 yerine 500 dönüyordu; eski e-postayla kayıt kontrolü de aynı hataya takılıyordu. Migration aracı tüm model tarihlerini yedek aldıktan sonra UTC ISO biçimine dönüştürür; hesap/CV içerikleri, şifreler ve zamanın milisaniyesi korunur. Eski tarihli gerçek test hesabında doğru şifreyle de hata yeniden üretildi. 158 test geçti; yeni testler tarih biçimi, içerik ve şifre koruma, geçersiz tarihte işlemi durdurma ve tekrar çalıştırma güvenliğini kapsar.
+
 Cloudflare canlı yayın altyapısı repoya eklendi: `cv.mozkan.com.tr` → `cv-mozkan` Worker → `cv-db` D1. İstek başına Prisma WASM istemcisi, D1 üzerinde atomik şifre sıfırlama, Worker ortamında PDF metin çıkarımı ve sunucu anahtarlarını derleme paketinden çıkarma kontrolü hazır. Veritabanı güncellemesi SQL yedeği alır; mevcut kayıtları koruyarak eksik tabloları, indeksleri ve CV alanlarını ekler. Yayın ve kontrol komutları README'de bulunur.
 
 Cloudflare doğrulaması: 25 dosyada 156 test; lint, yerel migration ve native uygulama kontrolleri geçti. OpenNext Worker derlendi; gerçek yerel Worker/D1 ortamında oturum, CV kaydetme/güncelleme, tema/özel bölüm kalıcılığı, PDF içe aktarma ve masaüstü/mobil gerçek PDF çizimi doğrulandı. Üretim bağımlılık audit'i 0 açık bildiriyor. Canlı AI anahtarları Worker secrets olarak mevcut; değerleri okunmadı veya değiştirilmedi.

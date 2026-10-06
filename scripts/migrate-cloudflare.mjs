@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildSchemaPlan, parseWranglerJson } from "./cloudflare-schema.mjs";
+import { buildSchemaPlan, parseWranglerJson, dateTimeColumns, dateTimeInspectionQuery, buildDateTimePlan } from "./cloudflare-schema.mjs";
 
 const remote = process.argv.includes("--remote");
 const apply = process.argv.includes("--apply");
@@ -16,12 +16,20 @@ const query = (sql) => {
   if (response.some(({ success }) => !success)) throw new Error("D1 query failed");
   return response[0].results;
 };
-const inspect = () => buildSchemaPlan(
-  query("SELECT name FROM sqlite_master WHERE type IN ('table', 'index')"),
-  query('PRAGMA table_info("CreatedCV")'),
-);
+const inspect = () => {
+  const objects = query("SELECT name FROM sqlite_master WHERE type IN ('table', 'index')");
+  const schema = buildSchemaPlan(objects, query('PRAGMA table_info("CreatedCV")'));
+  const columns = dateTimeColumns(objects);
+  const inspections = [];
+  // D1 limits compound SELECT terms more strictly than native SQLite.
+  for (let offset = 0; offset < columns.length; offset += 4) {
+    inspections.push(...query(dateTimeInspectionQuery(columns.slice(offset, offset + 4))));
+  }
+  const dates = buildDateTimePlan(inspections);
+  return [...schema, ...dates];
+};
 const plan = inspect();
-console.log(`${remote ? "Remote" : "Local"} D1: ${plan.length} additive schema statements pending.`);
+console.log(`${remote ? "Remote" : "Local"} D1: ${plan.length} schema/date compatibility statements pending.`);
 if (!plan.length || !apply) {
   if (plan.length) console.log("Run again with --apply to back up and apply these migrations.");
 } else {
@@ -36,5 +44,5 @@ if (!plan.length || !apply) {
   const result = parseWranglerJson(run("d1", "execute", database, target, "--file", file, "--json"));
   if (result.some(({ success }) => !success)) throw new Error("D1 migration failed; backup has been retained.");
   if (inspect().length) throw new Error("D1 schema verification failed; inspect before deployment.");
-  console.log("D1 schema verified. Existing records were retained.");
+  console.log("D1 schema and date formats verified. Existing records were retained.");
 }
