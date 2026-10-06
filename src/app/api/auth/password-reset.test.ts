@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   updateUser: vi.fn(), hashPassword: vi.fn(), configured: vi.fn(), send: vi.fn(),
 }));
 vi.mock("@/lib/auth", () => ({ hashPassword: mocks.hashPassword }));
+vi.mock("@/lib/cloudflare-prisma", () => ({ getD1Database: () => null }));
 vi.mock("@/lib/mail", () => ({
   isPasswordResetMailConfigured: mocks.configured,
   passwordResetOrigin: () => "https://cv.example.com",

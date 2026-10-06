@@ -27,3 +27,8 @@ prisma/*.db*
 
 # Generated from the installed PDF.js package at dev/build time
 public/pdfjs/
+
+# Cloudflare output, local databases and credentials
+.open-next/
+.wrangler/
+.dev.vars*

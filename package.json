@@ -22,13 +22,21 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "predev": "node scripts/copy-pdf-worker.mjs",
-    "prebuild": "node scripts/copy-pdf-worker.mjs"
+    "prebuild": "node scripts/copy-pdf-worker.mjs",
+    "build:cloudflare": "opennextjs-cloudflare build && node scripts/sanitize-cloudflare-env.mjs",
+    "preview:cloudflare": "opennextjs-cloudflare preview",
+    "deploy:cloudflare": "npm run build:cloudflare && opennextjs-cloudflare deploy",
+    "db:cloudflare:check": "node scripts/migrate-cloudflare.mjs --remote",
+    "db:cloudflare:migrate": "node scripts/migrate-cloudflare.mjs --remote --apply"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.130",
     "@ai-sdk/openai": "^3.0.124",
+    "@opennextjs/cloudflare": "1.20.8",
+    "@prisma/adapter-d1": "5.18.0",
     "@prisma/client": "^5.18.0",
     "@react-pdf/renderer": "^4.9.0",
+    "@thednp/dommatrix": "3.1.2",
     "ai": "^6.0.301",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
@@ -46,7 +54,8 @@
   },
   "overrides": {
     "postcss": "$postcss",
-    "picomatch@<=2.3.1": "^2.3.2"
+    "picomatch@<=2.3.1": "^2.3.2",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -60,6 +69,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.19",
+    "esbuild": "^0.28.2",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.5.27",
     "jsdom": "^29.1.1",
@@ -67,6 +77,7 @@
     "prisma": "^5.18.0",
     "tailwindcss": "^3.4.7",
     "typescript": "^5.5.4",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "wrangler": "4.147.0"
   }
 }

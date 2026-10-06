@@ -2,6 +2,10 @@
 
 6 Ekim 2026. Proje mevcut klasöre klonlandı; geliştirmeler sırayla commit edilerek `main` dalına gönderildi.
 
+Cloudflare canlı yayın altyapısı repoya eklendi: `cv.mozkan.com.tr` → `cv-mozkan` Worker → `cv-db` D1. İstek başına Prisma WASM istemcisi, D1 üzerinde atomik şifre sıfırlama, Worker ortamında PDF metin çıkarımı ve sunucu anahtarlarını derleme paketinden çıkarma kontrolü hazır. Veritabanı güncellemesi SQL yedeği alır; mevcut kayıtları koruyarak eksik tabloları, indeksleri ve CV alanlarını ekler. Yayın ve kontrol komutları README'de bulunur.
+
+Cloudflare doğrulaması: 25 dosyada 155 test; lint, yerel migration ve native uygulama kontrolleri geçti. OpenNext Worker derlendi; gerçek yerel Worker/D1 ortamında oturum, CV kaydetme/güncelleme, tema/özel bölüm kalıcılığı, PDF içe aktarma ve masaüstü/mobil gerçek PDF çizimi doğrulandı. Üretim bağımlılık audit'i 0 açık bildiriyor. Canlı AI anahtarları Worker secrets olarak mevcut; değerleri okunmadı veya değiştirilmedi.
+
 Profesyonel PDF CV düzenleme akışı: **PDF yükle → kaynak metni kontrol et → alanlara aktar → içeriği ve özel bölümleri düzenle → şablon/tema seç → gerçek PDF önizlemesi → indir/kaydet**. İçe aktarma onay gerektirir ve geri alınabilir; önceki CV kaydı korunur. AI anahtarı olmadan PDF metni tek bir düzenlenebilir özel bölüme aktarılır; kişisel bilgiler manuel doldurulur. AI varsa otomatik alan çıkarımı kullanılır. Projeler, yayınlar ve referanslar özel bölüm olarak saklanır ve altı PDF şablonuna dahil edilir.
 
 Tamamlanan editör geliştirmeleri:

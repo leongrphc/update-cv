@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cv-mozkan",
+  "account_id": "df414b176985bb15c627a0ac1f82e85d",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "routes": [{ "pattern": "cv.mozkan.com.tr", "custom_domain": true }],
+  "keep_vars": true,
+  "vars": {
+    "PRISMA_DATABASE_PROVIDER": "d1",
+    "APP_URL": "https://cv.mozkan.com.tr"
+  },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "cv-db",
+    "database_id": "4d6670a5-bc8a-4c15-8f33-dab8f822ce0c"
+  }],
+  "observability": { "enabled": true }
+}

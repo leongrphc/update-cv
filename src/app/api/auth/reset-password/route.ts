@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { z } from "zod";
-import { hashResetToken } from "@/lib/password-reset";
+import { hashResetToken, consumeResetTokenAndUpdatePassword } from "@/lib/password-reset";
 
 const schema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/, "Geçersiz sıfırlama bağlantısı"),
@@ -48,17 +48,7 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    await prisma.$transaction(async (tx) => {
-      const claimed = await tx.passwordReset.updateMany({
-        where: { id: resetRecord.id, used: false, expiresAt: { gt: new Date() } },
-        data: { used: true },
-      });
-      if (claimed.count !== 1) throw new Error("INVALID_RESET_TOKEN");
-      await tx.user.update({
-        where: { id: resetRecord.userId },
-        data: { passwordHash },
-      });
-    });
+    await consumeResetTokenAndUpdatePassword(resetRecord, passwordHash);
 
     return NextResponse.json({
       success: true,
@@ -68,7 +58,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === "INVALID_RESET_TOKEN") {
       return NextResponse.json({ success: false, error: "Bu bağlantı kullanılmış veya süresi dolmuş." }, { status: 400 });
     }
-    console.error("Reset password error:", error);
+    console.error("Reset password error:", error instanceof Error ? error.name : "Unknown error");
     return NextResponse.json(
       { success: false, error: "İşlem sırasında bir hata oluştu" },
       { status: 500 }

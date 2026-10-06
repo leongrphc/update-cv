@@ -70,3 +70,22 @@ Bu baselining komutu yalnızca migration geçmişi olmayan eski veritabanları i
 İş arama için `APIFY_API_TOKEN` gerekir. Bildirim kontrolünü zamanlayıcınızdan `POST /api/cron/check-alerts` adresine `Authorization: Bearer <CRON_SECRET>` başlığıyla çağırın. `CRON_SECRET` olmadan kontrol çalışmaz. API ve giriş istek sınırları süreç belleğinde tutulur; birden fazla sunucuyla dağıtımda paylaşılan bir sayaç deposu kullanılmalıdır.
 
 Her push ve pull request için GitHub Actions lint, test, migration, üretim bağımlılık audit'i, derleme ve çalışan uygulama kontrollerini yürütür. Yerelde aynı akışı `npm run lint`, `npm run test:run`, `npm run test:migrations`, `npm run build`, `npm run test:smoke` ve `npm run test:editor` ile doğrulayabilirsiniz. Smoke testi geçici bir veritabanı ve yerel sunucu kullanır; mevcut verilerinizi değiştirmez.
+
+## Cloudflare canlı yayın
+
+Canlı adres `https://cv.mozkan.com.tr`; mevcut Worker `cv-mozkan`, D1 veritabanı `cv-db` ve veritabanı binding'i `DB` kullanılır. Yerel geliştirme SQLite ile, Cloudflare istekleri Prisma D1 adaptörü ile çalışır.
+
+```sh
+npm ci
+npm run build:cloudflare
+npm run db:cloudflare:check
+npm run db:cloudflare:migrate
+npx opennextjs-cloudflare deploy
+node scripts/check-cloudflare.mjs https://cv.mozkan.com.tr
+```
+
+Wrangler hesabına giriş yapılmış olmalıdır. Veritabanı güncellemesi yalnızca repodaki eksik tablo, indeks ve sütunları ekler; mevcut kayıtları silmez. Değişiklikten önce `.agent/cloudflare/` altında SQL yedeği alır ve güncellemeyi doğrular. Bu klasör kişisel veriler içerebilir; Git'e gönderilmez. Aynı komut tekrar çalıştırılabilir. Standart Prisma migration komutları yalnızca yerel SQLite içindir.
+
+OpenNext yerel `.env` değerlerini derlemeye kopyalar; `build:cloudflare` sunucu değerlerini paketten çıkarır. Canlı `JWT_SECRET`, AI, Apify ve SMTP anahtarları Cloudflare Worker secrets olarak tutulmalıdır. Mevcut secrets ve alan adı korunur. `APP_URL` canlı HTTPS adresidir. Yerel Worker önizlemesinde `.dev.vars` içine yalnızca test anahtarlarını koyun, `node scripts/migrate-cloudflare.mjs --apply` ile yerel D1'i hazırlayın ve `npm run preview:cloudflare` çalıştırın.
+
+`check-cloudflare.mjs` gerçek PDF metin çıkarımı, font/worker dosyaları, D1 sorgusu ve anonim erişim sınırlarını doğrular; hesap veya CV oluşturmaz. Önce yerel Worker URL'sinde, ardından canlı adreste çalıştırın. Yayın sürümleri `npx wrangler deployments list --name cv-mozkan` ile görülebilir; uygulama geri alma `npx wrangler rollback <version-id> --name cv-mozkan` ile yapılabilir. Veritabanındaki ek alanlar eski uygulama sürümüyle uyumludur.
