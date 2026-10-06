@@ -10,7 +10,7 @@ import {
   Link,
 } from "@react-pdf/renderer";
 import { CreateCVFormData } from "@/types";
-import { getLabels, formatDateL } from "./cv-labels";
+import { getLabels, formatDateRange } from "./cv-labels";
 
 import "./pdf-fonts";
 import { applyPDFTheme } from "./pdf-theme";
@@ -239,7 +239,7 @@ export default function CVTemplateMinimal({ data }: { data: CreateCVFormData }) 
                 <View style={styles.entryHeader}>
                   <Text style={styles.entryTitle}>{exp.position}</Text>
                   <Text style={styles.entryDate}>
-                    {formatDateL(exp.startDate, data.cvLang)} – {exp.current ? L.present : formatDateL(exp.endDate, data.cvLang)}
+                    {formatDateRange(exp.startDate, exp.endDate, exp.current, data.cvLang, L.present)}
                   </Text>
                 </View>
                 <Text style={styles.entrySubtitle}>
@@ -265,7 +265,7 @@ export default function CVTemplateMinimal({ data }: { data: CreateCVFormData }) 
                 <View style={styles.entryHeader}>
                   <Text style={styles.entryTitle}>{edu.school}</Text>
                   <Text style={styles.entryDate}>
-                    {edu.startDate}{edu.endDate ? ` – ${edu.endDate}` : ""}
+                    {formatDateRange(edu.startDate, edu.endDate, false, data.cvLang)}
                   </Text>
                 </View>
                 <Text style={styles.entrySubtitle}>

@@ -10,7 +10,7 @@ import {
   Link,
 } from "@react-pdf/renderer";
 import { CreateCVFormData, type CVTemplateTheme, DEFAULT_THEME } from "@/types";
-import { getLabels, formatDateL } from "./cv-labels";
+import { getLabels, formatDateRange } from "./cv-labels";
 
 // Register Open Sans font with Turkish character support
 import "./pdf-fonts";
@@ -244,8 +244,7 @@ export default function CVTemplateModern({ data, theme: customTheme }: CVTemplat
                     <View style={styles.entryHeader}>
                       <Text style={styles.entryTitle}>{exp.position}</Text>
                       <Text style={styles.entryDate}>
-                        {formatDateL(exp.startDate, data.cvLang)} -{" "}
-                        {exp.current ? L.presentShort : formatDateL(exp.endDate, data.cvLang)}
+                        {formatDateRange(exp.startDate, exp.endDate, exp.current, data.cvLang, L.presentShort)}
                       </Text>
                     </View>
                     <Text style={styles.entrySubtitle}>
@@ -271,7 +270,7 @@ export default function CVTemplateModern({ data, theme: customTheme }: CVTemplat
                     <View style={styles.entryHeader}>
                       <Text style={styles.entryTitle}>{edu.school}</Text>
                       <Text style={styles.entryDate}>
-                        {edu.startDate}{edu.endDate ? ` - ${edu.endDate}` : ""}
+                        {formatDateRange(edu.startDate, edu.endDate, false, data.cvLang)}
                       </Text>
                     </View>
                     <Text style={styles.entrySubtitle}>

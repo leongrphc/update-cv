@@ -211,6 +211,7 @@ try {
       const parser = new PDFParse({ data: new Uint8Array(downloadedPDF) });
       try {
         const { text } = await parser.getText();
+        assert.ok(!text.includes("2020 -"), "A missing end date must not produce a dangling separator");
         assert.ok(text.includes("AYŞE ÖZTÜRK"), "Turkish name must remain searchable in the PDF");
         assert.ok(text.includes("12 projeyi başarıyla tamamladım."), "Only approved AI edits must appear in the PDF");
         assert.ok(text.includes("Özgün proje açıklaması"), "Imported projects must be included in the PDF");

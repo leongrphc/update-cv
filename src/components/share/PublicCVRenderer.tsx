@@ -1,7 +1,7 @@
 "use client";
 
 import type { CVPersonalInfo, CVExperienceEntry, CVEducationEntry, CVSkillsData, CVCustomSection } from "@/types";
-import { getLabels, type CVLang } from "@/components/create-cv/cv-labels";
+import { getLabels, formatDateRange, type CVLang } from "@/components/create-cv/cv-labels";
 
 interface PublicCVRendererProps {
   personalInfo: CVPersonalInfo;
@@ -67,8 +67,7 @@ export function PublicCVRenderer({
                     </p>
                   </div>
                   <span className="text-xs text-gray-400 whitespace-nowrap">
-                    {exp.startDate}
-                    {exp.current ? ` — ${labels.presentShort}` : exp.endDate ? ` — ${exp.endDate}` : ""}
+                    {formatDateRange(exp.startDate, exp.endDate, exp.current, cvLang, labels.presentShort)}
                   </span>
                 </div>
                 {exp.bullets.filter(Boolean).length > 0 && (
@@ -105,7 +104,7 @@ export function PublicCVRenderer({
                   </div>
                   {(edu.startDate || edu.endDate) && (
                     <span className="text-xs text-gray-400">
-                      {edu.startDate}{edu.endDate ? ` — ${edu.endDate}` : ""}
+                      {formatDateRange(edu.startDate, edu.endDate, false, cvLang)}
                     </span>
                   )}
                 </div>

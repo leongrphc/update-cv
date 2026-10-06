@@ -18,7 +18,7 @@ afterEach(() => vi.unstubAllGlobals());
 const data: CreateCVFormData = {
   personalInfo: { fullName: "Ayşe Öztürk", title: "Geliştirici", email: "ayse@example.com", phone: "",
     summary: "İş süreçlerini geliştirdim. Çağrı ve ölçüm sistemleri kurdum." },
-  experiences: [{ id: "experience", position: "Geliştirici", company: "Örnek", startDate: "2020",
+  experiences: [{ id: "incomplete", position: "Destek", company: "Örnek", startDate: "2016", endDate: "", current: false, bullets: [] }, { id: "experience", position: "Geliştirici", company: "Örnek", startDate: "2020",
     current: true, bullets: Array.from({ length: 60 }, (_, index) => `Kayıt ${index}: İş süreçlerinde ölçüm, geliştirme ve değerlendirme yaptım. TypeScript ile uygulamalar geliştirdim.`) }],
   educations: [], skills: { technical: ["TypeScript"], soft: [], languages: [{ id: "language", language: "İngilizce", level: "" }], certifications: [] },
   customSections: [{ id: "projects", title: "Özgün Projeler", content: "Çağrı kayıtları projesi\n12 teslimat gerçekleştirdim.\n" + Array.from({ length: 30 }, (_, index) => `Proje detayı ${index}: Ölçüm, geliştirme ve değerlendirme çalışması yaptım.`).join("\n") }, { id: "pub", title: "Yayınlar", content: "Ölçüm yöntemleri çalışması." }],
@@ -44,6 +44,9 @@ describe("professional PDF exports", () => {
         const text = result.text.replace(/\s+/g, " ");
         expect(text.toLocaleLowerCase("tr")).toContain("ayşe öztürk");
         expect(text).toContain("Çağrı ve ölçüm");
+        expect(text).toContain("2016");
+        expect(text).not.toContain("2016 -");
+        expect(text).not.toContain("undefined");
         for (let index = 0; index < 60; index++) expect(text).toContain(`Kayıt ${index}:`);
         expect(text).toContain("Çağrı kayıtları projesi");
         expect(text).toContain("12 teslimat gerçekleştirdim.");

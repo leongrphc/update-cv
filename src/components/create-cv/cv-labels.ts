@@ -50,3 +50,8 @@ export function formatDateL(date: string | undefined, lang?: CVLang): string {
   }
   return date;
 }
+
+export function formatDateRange(start: string | undefined, end: string | undefined, current = false, lang?: CVLang, presentLabel?: string) {
+  const last = current ? presentLabel || getLabels(lang).present : formatDateL(end, lang);
+  return [formatDateL(start, lang), last].filter(Boolean).join(" - ");
+}
