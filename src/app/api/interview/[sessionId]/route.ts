@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 const sessionIdSchema = z.string().min(1, "Session ID gerekli");
 
@@ -9,6 +10,8 @@ export async function GET(
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
+    const user = await getSession();
+    if (!user) return NextResponse.json({ error: "Oturum açmanız gerekiyor" }, { status: 401 });
     const { sessionId } = await params;
     const v = sessionIdSchema.safeParse(sessionId);
     if (!v.success) {
@@ -18,8 +21,8 @@ export async function GET(
       );
     }
 
-    const session = await prisma.interviewSession.findUnique({
-      where: { id: v.data },
+    const session = await prisma.interviewSession.findFirst({
+      where: { id: v.data, userId: user.id },
       include: {
         questions: {
           orderBy: { questionNumber: "asc" },

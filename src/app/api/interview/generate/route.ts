@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateInterviewQuestions } from "@/lib/llm-client";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 const MAX_TEXT = 50_000;
 
@@ -14,6 +15,8 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getSession();
+    if (!user) return NextResponse.json({ error: "Oturum açmanız gerekiyor" }, { status: 401 });
     const body = await request.json();
     const v = schema.safeParse(body);
     if (!v.success) {
@@ -35,6 +38,7 @@ export async function POST(request: NextRequest) {
     // Create interview session in database
     const session = await prisma.interviewSession.create({
       data: {
+        userId: user.id,
         cvText,
         jobDescription,
         targetRole: result.targetRole,
