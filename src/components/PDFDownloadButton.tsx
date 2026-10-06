@@ -9,31 +9,10 @@ import {
   View,
   StyleSheet,
   pdf,
-  Font,
 } from "@react-pdf/renderer";
 import type { PDFTemplateId } from "@/types";
 
-// Register Open Sans font with Turkish character support
-Font.register({
-  family: "Open Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-regular.ttf",
-      fontWeight: 400,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-600.ttf",
-      fontWeight: 600,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-700.ttf",
-      fontWeight: 700,
-    },
-  ],
-});
-
-// Hyphenation callback to prevent word breaking issues
-Font.registerHyphenationCallback((word) => [word]);
+import "./create-cv/pdf-fonts";
 
 // ============================================
 // SHARED TYPES & PARSER

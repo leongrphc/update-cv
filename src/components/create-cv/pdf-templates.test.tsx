@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { PDFParse } from "pdf-parse";
 import type { CreateCVFormData } from "@/types";
+// Load optimization exports first, as happens when navigating to the editor from results.
+import "../PDFDownloadButton";
 import Modern from "./CVTemplateModern";
 import Classic from "./CVTemplateClassic";
 import Creative from "./CVTemplateCreative";
