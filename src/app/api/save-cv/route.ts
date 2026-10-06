@@ -42,7 +42,7 @@ const schema = z.object({
     languages: z.array(z.object({
       id: z.string(),
       language: z.string(),
-      level: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", "Ana Dil"]),
+      level: z.enum(["", "A1", "A2", "B1", "B2", "C1", "C2", "Ana Dil"]),
     })).default([]),
     certifications: z.array(z.object({
       id: z.string(),

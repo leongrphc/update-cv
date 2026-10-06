@@ -7,7 +7,7 @@ import { middleware, config } from "./middleware";
 describe("API access and request limits", () => {
   beforeEach(() => { vi.useRealTimers(); });
 
-  it.each(["chat", "find-jobs", "analyze-job"])("rejects unauthenticated %s requests", async (route) => {
+  it.each(["chat", "find-jobs", "analyze-job", "import-cv"])("rejects unauthenticated %s requests", async (route) => {
     const path = `/api/${route}`;
     expect(config.matcher).toContain(`${path}/:path*`);
     expect((await middleware(new NextRequest(`http://localhost${path}`, { method: "POST" }))).status).toBe(401);

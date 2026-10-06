@@ -18,6 +18,7 @@ const protectedRoutes = [
 ];
 
 const protectedApiRoutes = [
+  "/api/import-cv",
   "/api/chat",
   "/api/find-jobs",
   "/api/analyze-job",
@@ -41,6 +42,7 @@ const protectedApiRoutes = [
 ];
 
 const aiApiPrefixes = [
+  "/api/import-cv",
   "/api/chat",
   "/api/optimize",
   "/api/cover-letter",
@@ -128,6 +130,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/import-cv/:path*",
     "/api/auth/login",
     "/api/auth/register",
     "/api/auth/forgot-password",

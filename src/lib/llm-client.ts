@@ -2,6 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { withJsonMode } from "./json-mode";
+import { cvImportSchema, CV_IMPORT_PROMPT, type ExtractedCV } from "./cv-import";
 import { z } from "zod";
 import {
   CV_OPTIMIZER_SYSTEM_PROMPT,
@@ -38,6 +39,16 @@ function getModel(provider: LLMProvider = "google") {
 
 function getProvider(): LLMProvider {
   return process.env.GOOGLE_GENERATIVE_AI_API_KEY ? "google" : "openai";
+}
+
+export async function extractEditableCV(sourceText: string): Promise<ExtractedCV> {
+  const { object } = await generateObject({
+    model: getModel(getProvider()), schema: cvImportSchema,
+    system: CV_IMPORT_PROMPT, temperature: 0,
+    prompt: `Extract this CV without changing its facts:\n${JSON.stringify({ sourceText })}`,
+    maxOutputTokens: 12_000,
+  });
+  return object;
 }
 
 // ============================================
