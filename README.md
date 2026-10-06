@@ -51,3 +51,7 @@ npm run db:setup
 ```
 
 Bu baselining komutu yalnızca migration geçmişi olmayan eski veritabanları içindir. Güncellemeler CV kayıtlarını korur ve paylaşım alanlarını ekler. Boş ve eski veritabanı yollarını `npm run test:migrations` ile doğrulayabilirsiniz.
+
+Üretimde şifre sıfırlama için `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` ve HTTPS site adresiniz olan `APP_URL` tanımlanmalıdır. SMTP hazır değilse sıfırlama uç noktası 503 döndürür; gönderilmemiş bir e-postayı başarılı göstermez. Geliştirme modunda bağlantı ekranda gösterilir. Token'lar veritabanında SHA-256 hash olarak tutulur; bu güncellemeden önce oluşturulmuş sıfırlama bağlantıları yerine yeni bağlantı istenmelidir.
+
+İş arama için `APIFY_API_TOKEN` gerekir. Bildirim kontrolünü zamanlayıcınızdan `POST /api/cron/check-alerts` adresine `Authorization: Bearer <CRON_SECRET>` başlığıyla çağırın. `CRON_SECRET` olmadan kontrol çalışmaz. API ve giriş istek sınırları süreç belleğinde tutulur; birden fazla sunucuyla dağıtımda paylaşılan bir sayaç deposu kullanılmalıdır.

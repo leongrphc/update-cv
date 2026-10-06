@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import crypto from "crypto";
+import { hashResetToken } from "@/lib/password-reset";
+import { isPasswordResetMailConfigured, passwordResetOrigin, sendPasswordResetEmail } from "@/lib/mail";
 
 const schema = z.object({
   email: z.string().email("Geçerli bir e-posta adresi girin"),
@@ -19,6 +21,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { email } = v.data;
+    const isDev = process.env.NODE_ENV !== "production";
+    if (!isDev && !isPasswordResetMailConfigured()) {
+      return NextResponse.json({ success: false, error: "Şifre sıfırlama şu anda kullanılamıyor. Lütfen daha sonra deneyin." }, { status: 503 });
+    }
 
     // Always return success to prevent email enumeration
     const user = await prisma.user.findUnique({
@@ -40,14 +46,13 @@ export async function POST(request: NextRequest) {
       await prisma.passwordReset.create({
         data: {
           userId: user.id,
-          token,
+          token: hashResetToken(token),
           expiresAt,
         },
       });
 
       // In dev mode, return the reset link
-      const isDev = process.env.NODE_ENV !== "production";
-      const resetLink = `${request.nextUrl.origin}/reset-password?token=${token}`;
+      const resetLink = `${passwordResetOrigin(request.nextUrl.origin)}/reset-password?token=${token}`;
 
       if (isDev) {
         return NextResponse.json({
@@ -57,8 +62,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // In production, would send email via nodemailer
-      // For now, just return success
+      await sendPasswordResetEmail(user.email, resetLink);
     }
 
     return NextResponse.json({

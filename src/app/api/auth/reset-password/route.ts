@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { z } from "zod";
+import { hashResetToken } from "@/lib/password-reset";
 
 const schema = z.object({
-  token: z.string().min(1, "Token gerekli"),
+  token: z.string().regex(/^[a-f0-9]{64}$/, "Geçersiz sıfırlama bağlantısı"),
   password: z
     .string()
     .min(8, "Şifre en az 8 karakter olmalı")
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const resetRecord = await prisma.passwordReset.findFirst({
       where: {
-        token,
+        token: hashResetToken(token),
         used: false,
         expiresAt: { gt: new Date() },
       },
@@ -47,22 +48,26 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    await prisma.$transaction([
-      prisma.user.update({
+    await prisma.$transaction(async (tx) => {
+      const claimed = await tx.passwordReset.updateMany({
+        where: { id: resetRecord.id, used: false, expiresAt: { gt: new Date() } },
+        data: { used: true },
+      });
+      if (claimed.count !== 1) throw new Error("INVALID_RESET_TOKEN");
+      await tx.user.update({
         where: { id: resetRecord.userId },
         data: { passwordHash },
-      }),
-      prisma.passwordReset.update({
-        where: { id: resetRecord.id },
-        data: { used: true },
-      }),
-    ]);
+      });
+    });
 
     return NextResponse.json({
       success: true,
       message: "Şifreniz başarıyla güncellendi. Artık giriş yapabilirsiniz.",
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_RESET_TOKEN") {
+      return NextResponse.json({ success: false, error: "Bu bağlantı kullanılmış veya süresi dolmuş." }, { status: 400 });
+    }
     console.error("Reset password error:", error);
     return NextResponse.json(
       { success: false, error: "İşlem sırasında bir hata oluştu" },
