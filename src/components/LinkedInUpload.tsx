@@ -23,7 +23,7 @@ export default function LinkedInUpload({ onProfileParsed, onError }: LinkedInUpl
     setIsDragging(false);
   }, []);
 
-  const processFile = async (file: File) => {
+  const processFile = useCallback(async (file: File) => {
     if (file.type !== "application/pdf") {
       onError("Lütfen PDF formatında bir dosya yükleyin");
       return;
@@ -66,7 +66,7 @@ export default function LinkedInUpload({ onProfileParsed, onError }: LinkedInUpl
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onError, onProfileParsed]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -76,7 +76,7 @@ export default function LinkedInUpload({ onProfileParsed, onError }: LinkedInUpl
     if (file) {
       processFile(file);
     }
-  }, []);
+  }, [processFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

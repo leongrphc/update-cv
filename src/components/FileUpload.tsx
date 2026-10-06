@@ -16,10 +16,10 @@ interface FileUploadProps {
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export function FileUpload({ onFileSelect, onTextExtracted, isLoading, label }: FileUploadProps) {
-  const handleTextExtracted = (text: string) => {
+  const handleTextExtracted = useCallback((text: string) => {
     if (onFileSelect) onFileSelect(text);
     if (onTextExtracted) onTextExtracted(text);
-  };
+  }, [onFileSelect, onTextExtracted]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -73,7 +73,7 @@ export function FileUpload({ onFileSelect, onTextExtracted, isLoading, label }: 
         setParsing(false);
       }
     },
-    [onFileSelect, onTextExtracted]
+    [handleTextExtracted]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
