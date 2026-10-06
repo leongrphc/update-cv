@@ -21,7 +21,7 @@ const data: CreateCVFormData = {
   experiences: [{ id: "experience", position: "Geliştirici", company: "Örnek", startDate: "2020",
     current: true, bullets: Array.from({ length: 60 }, (_, index) => `Kayıt ${index}: İş süreçlerinde ölçüm, geliştirme ve değerlendirme yaptım. TypeScript ile uygulamalar geliştirdim.`) }],
   educations: [], skills: { technical: ["TypeScript"], soft: [], languages: [{ id: "language", language: "İngilizce", level: "" }], certifications: [] },
-  customSections: [{ id: "projects", title: "Özgün Projeler", content: "Çağrı kayıtları projesi\n12 teslimat gerçekleştirdim." }, { id: "pub", title: "Yayınlar", content: "Ölçüm yöntemleri çalışması." }],
+  customSections: [{ id: "projects", title: "Özgün Projeler", content: "Çağrı kayıtları projesi\n12 teslimat gerçekleştirdim.\n" + Array.from({ length: 30 }, (_, index) => `Proje detayı ${index}: Ölçüm, geliştirme ve değerlendirme çalışması yaptım.`).join("\n") }, { id: "pub", title: "Yayınlar", content: "Ölçüm yöntemleri çalışması." }],
   templateId: "classic", cvLang: "tr",
 };
 
@@ -47,6 +47,7 @@ describe("professional PDF exports", () => {
         for (let index = 0; index < 60; index++) expect(text).toContain(`Kayıt ${index}:`);
         expect(text).toContain("Çağrı kayıtları projesi");
         expect(text).toContain("12 teslimat gerçekleştirdim.");
+        expect(text).toContain("Proje detayı 29:");
         expect(text).toContain("Ölçüm yöntemleri çalışması.");
         expect(text.indexOf("Çağrı kayıtları projesi")).toBeLessThan(text.indexOf("Ölçüm yöntemleri çalışması."));
         expect(outboundRequests).toEqual([]);

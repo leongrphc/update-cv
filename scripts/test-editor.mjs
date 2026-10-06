@@ -91,6 +91,13 @@ try {
       await expect(page.getByText("AI bağlantısı yapılandırılmamış;", { exact: false })).toBeVisible();
       await page.getByRole("button", { name: "Vazgeç", exact: true }).click();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Önceki Aday");
+      const editingURL = page.url();
+      const savedView = await context.newPage();
+      await savedView.goto(`${base}/create-cv?id=${id}&download=true`);
+      await expect(savedView.getByRole("heading", { name: "Önizleme & İndirme", exact: true })).toBeVisible();
+      await savedView.close();
+      await page.goto(editingURL);
+      await expect(page.getByLabel("Profesyonel Özet", { exact: true })).toHaveValue("Kaybolmayan taslak özeti");
       // Real manual import above; structured model output below is a deterministic fixture.
       await page.route("**/api/import-cv", (route) => route.fulfill({ json: imported }));
       await page.getByLabel("CV PDF dosyası", { exact: true }).setInputFiles(file);
@@ -110,10 +117,46 @@ try {
       await page.getByRole("button", { name: "İçe aktarmayı geri al" }).click();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Önceki Aday");
       await page.getByRole("button", { name: "Kontrol ettim, alanlara aktar" }).click();
+      await page.getByLabel("Profesyonel Ünvan", { exact: true }).fill("Geliştirici");
+      await page.getByLabel("Başvuracağınız pozisyon (isteğe bağlı)").fill("Kıdemli Yazılım Geliştirici");
+      await page.getByRole("button", { name: "AI ile özet öner", exact: true }).click();
+      await expect(page.getByRole("alert").filter({ hasText: "AI ile CV özeti" })).toContainText("AI ile CV özeti oluşturma bağlantısı henüz yapılandırılmamış");
+      await expect(page.getByLabel("Profesyonel Özet", { exact: true })).toHaveValue("Mevcut özet");
+      await page.route("**/api/generate-summary", route => {
+        const sent = route.request().postDataJSON();
+        assert.equal(sent.cvLang, "tr"); assert.equal(sent.targetRole, "Kıdemli Yazılım Geliştirici");
+        assert.equal(sent.existingSummary, "Mevcut özet");
+        return route.fulfill({ json: { success: true, summary: "12 projeyi tamamlayan geliştirici.", warnings: [] } });
+      });
+      await page.getByRole("button", { name: "AI ile özet öner", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "AI önerisini inceleyin" })).toBeVisible();
+      await expect(page.getByLabel("Profesyonel Özet", { exact: true })).toHaveValue("Mevcut özet");
+      await page.getByLabel("AI öneri metni", { exact: true }).fill("12 projeyi tamamlayan yazılım geliştirici.");
+      await page.getByRole("button", { name: "Öneriyi uygula", exact: true }).click();
+      await expect(page.getByLabel("Profesyonel Özet", { exact: true })).toHaveValue("12 projeyi tamamlayan yazılım geliştirici.");
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Horizontal overflow");
       await page.screenshot({ path: `.agent/editor-after-${name}.png`, fullPage: true });
       await page.route("**/fonts/open-sans/*", (route) => route.fulfill({ status: 503, body: "Temporary font failure" }));
-      for (let step = 0; step < 3; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await page.getByRole("button", { name: "Sonraki" }).click();
+      await expect(page.getByLabel("Deneyim başlangıcı 1", { exact: true })).toHaveValue("2020");
+      await page.getByRole("button", { name: "AI ile metin öner", exact: true }).click();
+      await expect(page.getByRole("alert").filter({ hasText: "AI ile CV düzenleme" })).toContainText("AI ile CV düzenleme bağlantısı henüz yapılandırılmamış");
+      await expect(page.getByLabel("Deneyim 1 madde 1", { exact: true })).toHaveValue("12 projeyi tamamladım.");
+      await page.route("**/api/enhance-cv-content", route => {
+        const sent = route.request().postDataJSON();
+        assert.equal(sent.cvLang, "tr"); assert.equal(sent.targetRole, "Kıdemli Yazılım Geliştirici");
+        assert.equal(sent.content, "12 projeyi tamamladım.");
+        return route.fulfill({ json: { success: true, enhanced: "12 projeyi başarıyla tamamladım.",
+          alternatives: ["12 projenin teslimatını tamamladım."], warnings: ["Öneriyi kaynak CV ile karşılaştırın."] } });
+      });
+      await page.getByRole("button", { name: "AI ile metin öner", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "AI önerisini inceleyin" })).toBeVisible();
+      await expect(page.getByLabel("Deneyim 1 madde 1", { exact: true })).toHaveValue("12 projeyi tamamladım.");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "AI review must fit mobile");
+      await page.screenshot({ path: `.agent/ai-review-after-${name}.png`, fullPage: true });
+      await page.getByRole("button", { name: "Öneriyi uygula", exact: true }).click();
+      await expect(page.getByLabel("Deneyim 1 madde 1", { exact: true })).toHaveValue("12 projeyi başarıyla tamamladım.");
+      for (let step = 0; step < 2; step++) await page.getByRole("button", { name: "Sonraki" }).click();
       await expect(page.getByLabel("Bölüm içeriği 1", { exact: true })).toHaveValue("Özgün proje açıklaması");
       await page.getByRole("button", { name: "Bölüm ekle", exact: true }).click();
       await page.getByLabel("Bölüm başlığı 2", { exact: true }).fill("Yayınlar");
@@ -156,7 +199,7 @@ try {
       try {
         const { text } = await parser.getText();
         assert.ok(text.includes("AYŞE ÖZTÜRK"), "Turkish name must remain searchable in the PDF");
-        assert.ok(text.includes("12 projeyi tamamladım."), "Original achievements must remain intact");
+        assert.ok(text.includes("12 projeyi başarıyla tamamladım."), "Only approved AI edits must appear in the PDF");
         assert.ok(text.includes("Özgün proje açıklaması"), "Imported projects must be included in the PDF");
         assert.ok(text.indexOf("Ölçüm yöntemleri çalışması.") < text.indexOf("Özgün proje açıklaması"), "Custom section order must be preserved");
       } finally { await parser.destroy(); }
@@ -173,6 +216,8 @@ try {
       const newCV = list.createdCVs.items.find((item) => item.id !== id && item.personalInfo.fullName === "Ayşe Öztürk");
       assert.ok(newCV, "Imported PDF must create a new CV");
       assert.equal(newCV.skills.languages[0].level, "");
+      assert.equal(newCV.targetRole, "Kıdemli Yazılım Geliştirici");
+      assert.equal(newCV.personalInfo.summary, "12 projeyi tamamlayan yazılım geliştirici.");
       assert.equal(newCV.customSections[0].title, "Araştırma yayınları");
       assert.equal(newCV.customSections[1].content, "Özgün proje açıklaması");
       assert.equal(newCV.theme.fontFamily, "Lato");

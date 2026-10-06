@@ -22,6 +22,7 @@ export function useEditorDraft(snapshot: EditorSnapshot, restore: (snapshot: Edi
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
   const editingSession = useRef(crypto.randomUUID());
+  const downloadDraft = useRef(crypto.randomUUID());
   const conflict = useRef(false);
   const writeRef = useRef<(() => void) | null>(null);
 
@@ -67,7 +68,8 @@ export function useEditorDraft(snapshot: EditorSnapshot, restore: (snapshot: Edi
         router.replace(`/create-cv?draft=${encodeURIComponent(active || crypto.randomUUID())}`);
         return;
       }
-      const document = serverId ? `saved:${serverId}` : `local:${localId}`;
+      // Viewing the saved PDF must not replace a newer unsaved editing draft.
+      const document = download && serverId ? `local:${downloadDraft.current}` : serverId ? `saved:${serverId}` : `local:${localId}`;
       let state: EditorSnapshot = { form: emptyCV(), step: 0, beforeImport: null, pdfReview: null };
       if (serverId) {
         const response = await fetch(`/api/my-cvs/${encodeURIComponent(serverId)}`, { signal: request.signal });

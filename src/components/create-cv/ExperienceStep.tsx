@@ -5,6 +5,7 @@ import AIEnhanceButton from "./AIEnhanceButton";
 
 interface ExperienceStepProps {
   data: CVExperienceEntry[];
+  cvLang?: "tr" | "en"; targetRole?: string;
   onChange: (data: CVExperienceEntry[]) => void;
 }
 
@@ -12,7 +13,7 @@ function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-export default function ExperienceStep({ data, onChange }: ExperienceStepProps) {
+export default function ExperienceStep({ data, onChange, cvLang, targetRole }: ExperienceStepProps) {
   const addExperience = () => {
     onChange([
       ...data,
@@ -84,14 +85,14 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           İş deneyimlerinizi en güncel olandan başlayarak ekleyin.
         </p>
         <button
           type="button"
           onClick={addExperience}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+          className="shrink-0 whitespace-nowrap text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
         >
           + Deneyim Ekle
         </button>
@@ -234,22 +235,17 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
             </div>
             <div className="space-y-2">
               {exp.bullets.map((bullet, bulletIndex) => (
-                <div key={bulletIndex} className="flex items-start gap-2">
+                <div key={bulletIndex} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2">
                   <span className="mt-2.5 text-slate-400 text-sm">•</span>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={2}
+                    aria-label={`Deneyim ${expIndex + 1} madde ${bulletIndex + 1}`}
                     value={bullet}
                     onChange={(e) => updateBullet(expIndex, bulletIndex, e.target.value)}
                     placeholder="Eylem fiili ile başlayın... örn: React ile e-ticaret platformu geliştirdim"
-                    className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="min-w-0 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   />
-                  <AIEnhanceButton
-                    content={bullet}
-                    contentType="bullet"
-                    context={`${exp.position} at ${exp.company}`}
-                    onEnhanced={(enhanced) => handleEnhanced(expIndex, bulletIndex, enhanced)}
-                    disabled={!bullet.trim()}
-                  />
+
                   {exp.bullets.length > 1 && (
                     <button
                       type="button"
@@ -260,6 +256,16 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
                       ✕
                     </button>
                   )}
+                  <div className="col-start-2 col-span-2">
+                  <AIEnhanceButton
+                    content={bullet}
+                    contentType="bullet"
+                    context={JSON.stringify({ position: exp.position, company: exp.company, bullets: exp.bullets, startDate: exp.startDate, endDate: exp.endDate, current: exp.current })}
+                    cvLang={cvLang} targetRole={targetRole}
+                    onEnhanced={(enhanced) => handleEnhanced(expIndex, bulletIndex, enhanced)}
+                    disabled={!bullet.trim()}
+                  />
+                  </div>
                 </div>
               ))}
             </div>

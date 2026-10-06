@@ -21,7 +21,13 @@ AI'dan mevcut bilgileri koruması istenir; otomatik çıkarım ve öneriler hata
 
 PDF düzenleme için **CV Oluştur → PDF CV yükle → Kontrol ettim, alanlara aktar** akışını kullanın. İçe aktarma mevcut formu otomatik değiştirmez, geri alınabilir ve eski CV kaydının üzerine yazmaz. Son adımda gerçek PDF görüntülenir; indirilen dosya önizlemeyle aynıdır.
 
-Seçilebilir metin içeren, en fazla 5 MB PDF desteklenir. Taranmış belgelerde önce OCR gerekir. PDF metni yapılandırılan AI sağlayıcısına gönderilir. Orijinal PDF tasarımı korunmaz; seçtiğiniz şablon uygulanır. Proje/yayın gibi editörde alanı olmayan bölümler kaynak metinde gösterilir ve yeni PDF'ye otomatik eklenmez. Kaydetmeden ayrılınca veya sayfayı yenileyince kaydedilmemiş düzenlemeler ve içe aktarma incelemesi kaybolabilir. AI bağlantısı için `.env` içinde Google veya OpenAI anahtarı gereklidir.
+Seçilebilir metin içeren, en fazla 5 MB PDF desteklenir. AI anahtarı varsa metin sağlayıcıya gönderilerek alanlara ayrılır. Anahtar yoksa PDF metni değiştirilmeden **Kaynak CV** adlı özel bölüme aktarılır; kişisel bilgilerinizi doldurup metni kendiniz düzenleyebilir ve bölümlere ayırabilirsiniz. Proje/yayın/referans gibi bölümler tüm şablonlarda PDF’ye dahil edilir. Taranmış belgelerde önce OCR gerekir; orijinal tasarım yerine seçtiğiniz şablon uygulanır.
+
+Düzenlemeler, kaldığınız adım ve PDF aktarım incelemesi her hesap ve CV için ayrı yerel taslakta saklanır. Taslak seçiciden önceki çalışmalarınızı açabilir, JSON yedeği indirebilir ve yedeği yeni bir CV olarak geri yükleyebilirsiniz. Tarayıcı verilerini silmek yerel taslakları da siler; **Kaydet** ile CV’yi hesabınıza kaydedin. Başka sekmedeki değişiklikle çakışma veya dolu tarayıcı depolaması durumunda uyarı gösterilir.
+
+Altı şablonun renkleri, yazı tipi ve boyutu özelleştirilip CV ile birlikte kaydedilir. Türkçe karakterleri destekleyen Open Sans, Lato ve PT Serif fontları lisanslarıyla uygulamaya dahildir. Deneyim, eğitim ve özel bölümler sıralanabilir.
+
+AI ile özet, deneyim maddesi veya özel bölüm için öneri isteyebilirsiniz. Dil ve başvuracağınız pozisyon önerinin odağını belirler. Mevcut metin, öneri ve uyarılar gösterilir; öneriyi düzenleyip **Öneriyi uygula** ile onaylamadan CV değişmez. Yeni sayı uyarısı tüm yanlış bilgileri tespit etmez; önerileri kaynak bilgilerle karşılaştırın. İstek sırasında metin veya CV bilgileri değişirse eski öneri uygulanamaz. Canlı AI önerileri için Google veya OpenAI anahtarı gerekir.
 
 ## Çalıştırmak için
 
@@ -63,4 +69,4 @@ Bu baselining komutu yalnızca migration geçmişi olmayan eski veritabanları i
 
 İş arama için `APIFY_API_TOKEN` gerekir. Bildirim kontrolünü zamanlayıcınızdan `POST /api/cron/check-alerts` adresine `Authorization: Bearer <CRON_SECRET>` başlığıyla çağırın. `CRON_SECRET` olmadan kontrol çalışmaz. API ve giriş istek sınırları süreç belleğinde tutulur; birden fazla sunucuyla dağıtımda paylaşılan bir sayaç deposu kullanılmalıdır.
 
-Her push ve pull request için GitHub Actions lint, test, migration, üretim bağımlılık audit'i, derleme ve çalışan uygulama kontrollerini yürütür. Yerelde aynı akışı `npm run lint`, `npm run test:run`, `npm run test:migrations`, `npm run build` ve `npm run test:smoke` ile doğrulayabilirsiniz. Smoke testi geçici bir veritabanı ve yerel sunucu kullanır; mevcut verilerinizi değiştirmez.
+Her push ve pull request için GitHub Actions lint, test, migration, üretim bağımlılık audit'i, derleme ve çalışan uygulama kontrollerini yürütür. Yerelde aynı akışı `npm run lint`, `npm run test:run`, `npm run test:migrations`, `npm run build`, `npm run test:smoke` ve `npm run test:editor` ile doğrulayabilirsiniz. Smoke testi geçici bir veritabanı ve yerel sunucu kullanır; mevcut verilerinizi değiştirmez.

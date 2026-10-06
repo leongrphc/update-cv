@@ -1,9 +1,11 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import AIEnhanceButton from "./AIEnhanceButton";
 import type { CVCustomSection } from "@/types";
 
-export default function CustomSectionsEditor({ data, onChange }: {
+export default function CustomSectionsEditor({ data, onChange, cvLang, targetRole }: {
+  cvLang?: "tr" | "en"; targetRole?: string;
   data: CVCustomSection[]; onChange: (sections: CVCustomSection[]) => void;
 }) {
   const update = (id: string, patch: Partial<CVCustomSection>) => onChange(data.map(section => section.id === id ? { ...section, ...patch } : section));
@@ -30,6 +32,7 @@ export default function CustomSectionsEditor({ data, onChange }: {
         <input id={`section-title-${section.id}`} value={section.title} maxLength={200} placeholder="Örn. Projeler" onChange={event => update(section.id, { title: event.target.value })} className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800" /></div>
       <div><label htmlFor={`section-content-${section.id}`} className="block text-sm font-medium mb-1">Bölüm içeriği {index + 1}</label>
         <textarea id={`section-content-${section.id}`} value={section.content} maxLength={50_000} rows={6} placeholder="Başarılarınızı, açıklamaları ve bağlantıları yazın." onChange={event => update(section.id, { content: event.target.value })} className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 leading-relaxed" /></div>
+      <AIEnhanceButton content={section.content} contentType="summary" context={JSON.stringify({ heading: section.title })} cvLang={cvLang} targetRole={targetRole} onEnhanced={content => update(section.id, { content })} />
     </div>)}
   </section>;
 }

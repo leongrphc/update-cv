@@ -465,23 +465,30 @@ export interface CreateCVFormData {
 }
 
 export interface EnhanceCVContentRequest {
+  cvLang?: "tr" | "en";
+  targetRole?: string;
   content: string;
   contentType: "bullet" | "summary" | "title";
   context?: string;
 }
 
 export interface EnhanceCVContentResult {
+  warnings?: string[];
   enhanced: string;
   alternatives: string[];
 }
 
 export interface GenerateSummaryRequest {
+  cvLang?: "tr" | "en";
+  targetRole?: string;
+  existingSummary?: string;
   personalInfo: CVPersonalInfo;
   experiences: CVExperienceEntry[];
   skills: CVSkillsData;
 }
 
 export interface GenerateSummaryResult {
+  warnings?: string[];
   summary: string;
   keywords: string[];
 }

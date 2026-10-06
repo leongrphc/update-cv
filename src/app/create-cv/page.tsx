@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Linkedin, Upload, Keyboard, Globe } from "lucide-react";
 import StepIndicator from "@/components/create-cv/StepIndicator";
 import PersonalInfoStep from "@/components/create-cv/PersonalInfoStep";
+import AIContentReview from "@/components/create-cv/AIContentReview";
 import ExperienceStep from "@/components/create-cv/ExperienceStep";
 import EducationStep from "@/components/create-cv/EducationStep";
 import CustomSectionsEditor from "@/components/create-cv/CustomSectionsEditor";
@@ -151,7 +152,6 @@ function CreateCVContent() {
   const [customSections, setCustomSections] = useState<CVCustomSection[]>([]);
   const [targetRole, setTargetRole] = useState("");
   const [theme, setTheme] = useState<CVTemplateTheme>();
-  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [pdfReview, setPdfReview] = useState<PDFImportReview | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const [beforeImport, setBeforeImport] = useState<CreateCVFormData | null>(null);
@@ -222,29 +222,6 @@ function CreateCVContent() {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
-  const handleGenerateSummary = async () => {
-    setIsGeneratingSummary(true);
-    try {
-      const res = await fetch("/api/generate-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          personalInfo,
-          experiences,
-          skills,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.summary) {
-        setPersonalInfo((prev) => ({ ...prev, summary: data.summary }));
-      }
-    } catch {
-      // Summary generation failed
-    } finally {
-      setIsGeneratingSummary(false);
-    }
-  };
-
   const handleLinkedInParsed = (profile: LinkedInProfile) => {
     const mapped = mapLinkedInToForm(profile);
     draft.startNew({ form: cvFormSchema.parse({ ...mapped, templateId: "classic", cvLang }), step: 0, beforeImport: formData, pdfReview: null });
@@ -304,8 +281,8 @@ function CreateCVContent() {
       </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-        <p role="status" className="flex-1 min-w-0">{draft.status || "Düzenlemeleriniz bu tarayıcıda taslak olarak korunur."}</p>
-        <select aria-label="Taslak seç" value="" onChange={(event) => { setSavedNotice(false); draft.openDraft(event.target.value); }} className="max-w-full sm:max-w-56 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-sm px-2 py-2">
+        <p role="status" className="basis-full sm:basis-auto sm:flex-1 min-w-0">{draft.status || "Düzenlemeleriniz bu tarayıcıda taslak olarak korunur."}</p>
+        <select aria-label="Taslak seç" value="" onChange={(event) => { setSavedNotice(false); draft.openDraft(event.target.value); }} className="w-full sm:w-auto max-w-full sm:max-w-56 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-sm px-2 py-2">
           <option value="" disabled>Taslak aç…</option>
           {draft.drafts.map((entry) => <option key={entry.document} value={entry.document}>{entry.label} · {new Date(entry.updatedAt).toLocaleDateString("tr-TR")}</option>)}
         </select>
@@ -488,19 +465,22 @@ function CreateCVContent() {
           <PersonalInfoStep
             data={personalInfo}
             onChange={setPersonalInfo}
-            onGenerateSummary={handleGenerateSummary}
-            isGeneratingSummary={isGeneratingSummary}
+            summaryTools={<AIContentReview content={personalInfo.summary || ""}
+              endpoint="/api/generate-summary" responseField="summary" label="AI ile özet öner"
+              requestBody={{ personalInfo, experiences, skills, cvLang, targetRole, existingSummary: personalInfo.summary || "" }}
+              disabled={!personalInfo.fullName.trim() || !personalInfo.title.trim()}
+              onApply={summary => setPersonalInfo(current => ({ ...current, summary }))} />}
           /></>
         )}
         {currentStep === 1 && (
-          <ExperienceStep data={experiences} onChange={setExperiences} />
+          <ExperienceStep data={experiences} onChange={setExperiences} cvLang={cvLang} targetRole={targetRole} />
         )}
         {currentStep === 2 && (
           <EducationStep data={educations} onChange={setEducations} />
         )}
         {currentStep === 3 && (
           <><SkillsStep data={skills} onChange={setSkills} />
-            <CustomSectionsEditor data={customSections} onChange={setCustomSections} /></>
+            <CustomSectionsEditor data={customSections} onChange={setCustomSections} cvLang={cvLang} targetRole={targetRole} /></>
         )}
         {currentStep === 4 && (
           <PreviewStep
