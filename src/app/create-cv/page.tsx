@@ -10,7 +10,7 @@ import ExperienceStep from "@/components/create-cv/ExperienceStep";
 import EducationStep from "@/components/create-cv/EducationStep";
 import CustomSectionsEditor from "@/components/create-cv/CustomSectionsEditor";
 import SkillsStep from "@/components/create-cv/SkillsStep";
-import PreviewStep from "@/components/create-cv/PreviewStep";
+import dynamic from "next/dynamic";
 import { useEditorDraft } from "@/components/create-cv/useEditorDraft";
 import { type EditorSnapshot, type PDFImportReview } from "@/lib/cv-draft";
 import { cvFormSchema } from "@/lib/cv-form";
@@ -28,6 +28,13 @@ import {
   CVTemplateTheme,
   CVCustomSection,
 } from "@/types";
+
+// PDF generation runs in the browser. Loading its Node renderer during Worker
+// SSR starts unsupported native font loading even when the preview is closed.
+const PreviewStep = dynamic(() => import("@/components/create-cv/PreviewStep"), {
+  ssr: false,
+  loading: () => <p role="status" className="py-8 text-center text-gray-500">PDF önizlemesi hazırlanıyor…</p>,
+});
 
 const initialPersonalInfo: CVPersonalInfo = {
   fullName: "",
