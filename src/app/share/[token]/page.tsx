@@ -7,12 +7,13 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 interface Props {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { token } = await params;
   const cv = await prisma.createdCV.findFirst({
-    where: { shareToken: params.token, isPublic: true },
+    where: { shareToken: token, isPublic: true },
   });
 
   if (!cv) return { title: "CV Bulunamadı" };
@@ -25,8 +26,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ShareCVPage({ params }: Props) {
+  const { token } = await params;
   const cv = await prisma.createdCV.findFirst({
-    where: { shareToken: params.token, isPublic: true },
+    where: { shareToken: token, isPublic: true },
   });
 
   if (!cv) {
