@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     const result = await streamText({
-      model: google("models/gemini-2.5-flash"),
+      model: google("gemini-2.5-flash"),
       system: CAREER_COACH_SYSTEM_PROMPT,
       messages: v.data.messages,
       temperature: 0.7,

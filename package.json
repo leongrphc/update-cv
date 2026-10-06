@@ -17,11 +17,11 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@ai-sdk/google": "^0.0.46",
-    "@ai-sdk/openai": "^0.0.54",
+    "@ai-sdk/google": "^3.0.130",
+    "@ai-sdk/openai": "^3.0.124",
     "@prisma/client": "^5.18.0",
     "@react-pdf/renderer": "^4.9.0",
-    "ai": "^3.3.0",
+    "ai": "^6.0.301",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "jose": "^5.6.3",
@@ -33,6 +33,10 @@
     "react-dropzone": "^14.2.3",
     "tailwind-merge": "^2.4.0",
     "zod": "^3.25.76"
+  },
+  "overrides": {
+    "postcss": "$postcss",
+    "picomatch@<=2.3.1": "^2.3.2"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -48,7 +52,7 @@
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.5.27",
     "jsdom": "^29.1.1",
-    "postcss": "^8.4.40",
+    "postcss": "^8.5.29",
     "prisma": "^5.18.0",
     "tailwindcss": "^3.4.7",
     "typescript": "^5.5.4",

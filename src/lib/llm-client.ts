@@ -1,6 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject } from "ai";
+import { withJsonMode } from "./json-mode";
 import { z } from "zod";
 import {
   CV_OPTIMIZER_SYSTEM_PROMPT,
@@ -31,8 +32,8 @@ export type LLMProvider = "openai" | "google";
 
 function getModel(provider: LLMProvider = "google") {
   return provider === "openai"
-    ? openai("gpt-4-turbo-preview")
-    : google("models/gemini-2.5-flash");
+    ? withJsonMode(openai.chat("gpt-4-turbo-preview"))
+    : google("gemini-2.5-flash");
 }
 
 function getProvider(): LLMProvider {
