@@ -148,7 +148,7 @@ export default function PreviewStep({
       if (data.success) {
         setSavedId(data.id);
         onSaved(data.id);
-        setSaveMessage("CV başarıyla kaydedildi!");
+        setSaveMessage(null);
       } else {
         setSaveMessage(data.error || "Kaydetme başarısız. Giriş yapmayı deneyin.");
       }

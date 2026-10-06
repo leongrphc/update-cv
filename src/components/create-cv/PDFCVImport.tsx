@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, Loader2, Upload, Undo2 } from "lucide-react";
 import type { CreateCVFormData } from "@/types";
+import type { PDFImportReview } from "@/lib/cv-draft";
 
 interface ImportResult {
   cv: CreateCVFormData;
@@ -16,14 +17,16 @@ interface Props {
   onApply: (cv: CreateCVFormData) => void;
   onUndo: () => void;
   canUndo: boolean;
+  review: PDFImportReview | null;
+  onReviewChange: (review: PDFImportReview | null) => void;
 }
 
-export default function PDFCVImport({ hasContent, onApply, onUndo, canUndo }: Props) {
-  const [result, setResult] = useState<ImportResult | null>(null);
-  const [fileName, setFileName] = useState("");
+export default function PDFCVImport({ hasContent, onApply, onUndo, canUndo, review, onReviewChange }: Props) {
+  const result = review?.result || null;
+  const fileName = review?.fileName || "";
+  const applied = review?.applied || false;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [applied, setApplied] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
@@ -42,16 +45,14 @@ export default function PDFCVImport({ hasContent, onApply, onUndo, canUndo }: Pr
     const request = new AbortController();
     controller.current = request;
     setLoading(true);
-    setResult(null);
-    setApplied(false);
-    setFileName(file.name);
+    onReviewChange(null);
     const body = new FormData();
     body.append("file", file);
     try {
       const response = await fetch("/api/import-cv", { method: "POST", body, signal: request.signal });
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "CV aktarılamadı. Tekrar deneyin.");
-      if (!request.signal.aborted) setResult(data);
+      if (!request.signal.aborted) onReviewChange({ result: data as ImportResult as PDFImportReview["result"], fileName: file.name, applied: false });
     } catch (failure) {
       if (!request.signal.aborted) setError(failure instanceof Error ? failure.message : "Bağlantı kurulamadı. Tekrar deneyin.");
     } finally {
@@ -116,11 +117,11 @@ export default function PDFCVImport({ hasContent, onApply, onUndo, canUndo }: Pr
         {!applied && <>
           {hasContent && <p className="text-sm text-slate-700 dark:text-slate-200">Aktarım mevcut form alanlarını değiştirecek. Önceki alanları geri alabilirsiniz; kayıt yeni bir CV oluşturur.</p>}
           <div className="flex flex-col sm:flex-row gap-3">
-            <button type="button" onClick={() => { onApply(result.cv); setApplied(true); }} className="px-4 py-2.5 bg-blue-600 text-white rounded-sm font-medium hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Kontrol ettim, alanlara aktar</button>
-            <button type="button" onClick={() => setResult(null)} className="px-4 py-2.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-sm">Vazgeç</button>
+            <button type="button" onClick={() => { onApply(result.cv); onReviewChange({ ...review!, applied: true }); }} className="px-4 py-2.5 bg-blue-600 text-white rounded-sm font-medium hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Kontrol ettim, alanlara aktar</button>
+            <button type="button" onClick={() => onReviewChange(null)} className="px-4 py-2.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-sm">Vazgeç</button>
           </div>
         </>}
-        {applied && canUndo && <button type="button" onClick={() => { onUndo(); setApplied(false); }} className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 underline underline-offset-4"><Undo2 className="w-4 h-4" /> İçe aktarmayı geri al</button>}
+        {applied && canUndo && <button type="button" onClick={() => { onUndo(); onReviewChange({ ...review!, applied: false }); }} className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 underline underline-offset-4"><Undo2 className="w-4 h-4" /> İçe aktarmayı geri al</button>}
       </div>}
     </section>
   );

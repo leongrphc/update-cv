@@ -81,6 +81,9 @@ try {
       await page.evaluate((data) => sessionStorage.setItem("editCreatedCV", JSON.stringify(data)), { ...original, id });
       await page.goto(`${base}/create-cv?edit=true`);
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Önceki Aday");
+      await page.getByLabel("Profesyonel Özet", { exact: true }).fill("Kaybolmayan taslak özeti");
+      await page.reload();
+      await expect(page.getByLabel("Profesyonel Özet", { exact: true })).toHaveValue("Kaybolmayan taslak özeti");
       const file = { name: `${"uzun-dosya-adi-".repeat(8)}.pdf`, mimeType: "application/pdf", buffer: pdfBytes };
       await page.getByLabel("CV PDF dosyası", { exact: true }).setInputFiles(file);
       await expect(page.getByRole("region", { name: "Mevcut PDF CV’yi düzenle" }).getByRole("alert")).toContainText("AI bağlantısı henüz yapılandırılmamış", { timeout: 15_000 });
@@ -89,12 +92,18 @@ try {
       await page.route("**/api/import-cv", (route) => route.fulfill({ json: imported }));
       await page.getByLabel("CV PDF dosyası", { exact: true }).setInputFiles(file);
       await expect(page.getByRole("heading", { name: "Aktarmadan önce kontrol edin" })).toBeVisible();
+      await page.reload();
+      await expect(page.getByRole("heading", { name: "Aktarmadan önce kontrol edin" })).toBeVisible();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Önceki Aday");
       await page.getByText("Kaynak metin ve aktarılamayan bölümler", { exact: true }).click();
       await expect(page.locator("pre")).toContainText("12 projeyi tamamladım.");
       await page.getByRole("button", { name: "Kontrol ettim, alanlara aktar" }).click();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Ayşe Öztürk");
       await expect(page.getByLabel("Telefon", { exact: true })).toHaveValue("");
+      await page.getByRole("button", { name: "Sonraki" }).click();
+      await page.reload();
+      await expect(page.getByRole("heading", { name: "İş Deneyimi", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "Önceki" }).click();
       await page.getByRole("button", { name: "İçe aktarmayı geri al" }).click();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Önceki Aday");
       await page.getByRole("button", { name: "Kontrol ettim, alanlara aktar" }).click();
@@ -162,10 +171,29 @@ try {
       assert.equal(afterResave.createdCVs.total, list.createdCVs.total, "Returning from preview must not create duplicate CVs");
       await page.evaluate((data) => sessionStorage.setItem("editCreatedCV", JSON.stringify(data)), newCV);
       await page.goto(`${base}/create-cv?edit=true`);
-      for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await expect(page.getByRole("heading", { name: "Önizleme & İndirme", exact: true })).toBeVisible();
       await page.getByRole("button", { name: "Tema Özelleştir" }).click();
       await expect(page.getByRole("button", { name: "Lato", exact: true })).toHaveAttribute("aria-pressed", "true");
       await expect(page.getByRole("slider")).toHaveValue("14");
+      const other = await context.request.post(`${base}/api/auth/register`, { data: {
+        name: "Other Editor", email: `other-${name}@example.com`, password: "EditorPassword123",
+      } });
+      assert.equal(other.status(), 200);
+      const otherToken = other.headers()["set-cookie"].split(";")[0].slice("session=".length);
+      await context.addCookies([{ name: "session", value: otherToken, url: base }]);
+      assert.equal((await context.request.get(`${base}/api/my-cvs/${newCV.id}`)).status(), 404);
+      await page.goto(`${base}/create-cv`);
+      await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("");
+      const backup = { version: 1, snapshot: { form: { ...cv, id: newCV.id,
+        personalInfo: { ...cv.personalInfo, fullName: "Yedekten Gelen Aday" } }, step: 0 } };
+      await page.getByLabel("Taslak yedeği dosyası").setInputFiles({ name: "backup.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(backup)) });
+      await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Yedekten Gelen Aday");
+      await page.reload();
+      await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Yedekten Gelen Aday");
+      await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException("Quota exceeded", "QuotaExceededError"); }; });
+      await page.getByLabel("Ad Soyad *", { exact: true }).fill("Bellekteki Aday");
+      await expect(page.getByText("Yerel taslak kaydedilemedi.", { exact: false })).toBeVisible();
+      await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Bellekteki Aday");
       assert.deepEqual(errors, []);
     }
     await context.close();

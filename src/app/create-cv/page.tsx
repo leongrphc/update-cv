@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Linkedin, Upload, Keyboard, Globe } from "lucide-react";
 import StepIndicator from "@/components/create-cv/StepIndicator";
@@ -9,6 +9,9 @@ import ExperienceStep from "@/components/create-cv/ExperienceStep";
 import EducationStep from "@/components/create-cv/EducationStep";
 import SkillsStep from "@/components/create-cv/SkillsStep";
 import PreviewStep from "@/components/create-cv/PreviewStep";
+import { useEditorDraft } from "@/components/create-cv/useEditorDraft";
+import { type EditorSnapshot, type PDFImportReview } from "@/lib/cv-draft";
+import { cvFormSchema } from "@/lib/cv-form";
 import PDFCVImport from "@/components/create-cv/PDFCVImport";
 import LinkedInUpload from "@/components/LinkedInUpload";
 import LinkedInManualForm from "@/components/LinkedInManualForm";
@@ -129,8 +132,7 @@ export default function CreateCVPage() {
 
 function CreateCVContent() {
   const searchParams = useSearchParams();
-  const isEdit = searchParams.get("edit") === "true";
-  const isDownload = searchParams.get("download") === "true";
+  const isEdit = Boolean(searchParams.get("id")) || searchParams.get("edit") === "true";
 
   const [currentStep, setCurrentStep] = useState(0);
   const [cvId, setCvId] = useState<string>();
@@ -146,6 +148,8 @@ function CreateCVContent() {
   const [cvLang, setCvLang] = useState<"tr" | "en">("tr");
   const [theme, setTheme] = useState<CVTemplateTheme>();
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [pdfReview, setPdfReview] = useState<PDFImportReview | null>(null);
+  const [savedNotice, setSavedNotice] = useState(false);
   const [beforeImport, setBeforeImport] = useState<CreateCVFormData | null>(null);
 
   // LinkedIn import state
@@ -153,50 +157,6 @@ function CreateCVContent() {
   const [linkedInMode, setLinkedInMode] = useState<"pdf" | "manual">("pdf");
   const [linkedInError, setLinkedInError] = useState<string | null>(null);
   const [linkedInImported, setLinkedInImported] = useState(false);
-
-  // Load edit/download data from sessionStorage
-  useEffect(() => {
-    if (isEdit) {
-      const stored = sessionStorage.getItem("editCreatedCV");
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          setCvId(data.id);
-          setCvTitle(data.title);
-          setPersonalInfo(data.personalInfo);
-          setExperiences(data.experiences || []);
-          setEducations(data.educations || []);
-          setSkills(data.skills || initialSkills);
-          setTemplateId(data.templateId || "modern");
-          setCvLang(data.cvLang || "tr");
-          setTheme(data.theme);
-          sessionStorage.removeItem("editCreatedCV");
-        } catch {
-          // ignore
-        }
-      }
-    } else if (isDownload) {
-      const stored = sessionStorage.getItem("downloadCreatedCV");
-      if (stored) {
-        try {
-          const data = JSON.parse(stored);
-          setCvId(data.id);
-          setCvTitle(data.title);
-          setPersonalInfo(data.personalInfo);
-          setExperiences(data.experiences || []);
-          setEducations(data.educations || []);
-          setSkills(data.skills || initialSkills);
-          setTemplateId(data.templateId || "modern");
-          setCvLang(data.cvLang || "tr");
-          setTheme(data.theme);
-          setCurrentStep(4); // Jump to preview/download step
-          sessionStorage.removeItem("downloadCreatedCV");
-        } catch {
-          // ignore
-        }
-      }
-    }
-  }, [isEdit, isDownload]);
 
   const formData: CreateCVFormData = {
     id: cvId,
@@ -209,6 +169,26 @@ function CreateCVContent() {
     cvLang,
     theme,
   };
+
+  const applyForm = useCallback((cv: CreateCVFormData) => {
+    setCvId(cv.id);
+    setCvTitle(cv.title);
+    setPersonalInfo(cv.personalInfo);
+    setExperiences(cv.experiences);
+    setEducations(cv.educations);
+    setSkills(cv.skills);
+    setTemplateId(cv.templateId);
+    setCvLang(cv.cvLang || "tr");
+    setTheme(cv.theme);
+  }, []);
+
+  const restoreSnapshot = useCallback((saved: EditorSnapshot) => {
+    applyForm(saved.form);
+    setCurrentStep(saved.step);
+    setBeforeImport(saved.beforeImport);
+    setPdfReview(saved.pdfReview);
+  }, [applyForm]);
+  const draft = useEditorDraft({ form: formData, step: currentStep, beforeImport, pdfReview }, restoreSnapshot);
 
   const canProceed = () => {
     switch (currentStep) {
@@ -274,17 +254,8 @@ function CreateCVContent() {
     handleLinkedInParsed(profile);
   };
 
-  const applyForm = (cv: CreateCVFormData) => {
-    setCvId(cv.id);
-    setCvTitle(cv.title);
-    setPersonalInfo(cv.personalInfo);
-    setExperiences(cv.experiences);
-    setEducations(cv.educations);
-    setSkills(cv.skills);
-    setTemplateId(cv.templateId);
-    setCvLang(cv.cvLang || "tr");
-    setTheme(cv.theme);
-  };
+  if (!draft.ready) return <p role="status" className="py-12 text-slate-600 dark:text-slate-300">CV ve taslak yükleniyor…</p>;
+  if (draft.error) return <div role="alert" className="max-w-4xl mx-auto py-12 text-red-700 dark:text-red-300"><p>{draft.error}</p><a href="/my-cvs" className="inline-block mt-4 underline">CV’lerime dön</a></div>;
 
   return (
     <div className="max-w-6xl mx-auto flex gap-6">
@@ -329,10 +300,25 @@ function CreateCVContent() {
         </div>
       </div>
 
+      <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+        <p role="status" className="flex-1 min-w-0">{draft.status || "Düzenlemeleriniz bu tarayıcıda taslak olarak korunur."}</p>
+        <select aria-label="Taslak seç" value="" onChange={(event) => { setSavedNotice(false); draft.openDraft(event.target.value); }} className="max-w-full sm:max-w-56 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-sm px-2 py-2">
+          <option value="" disabled>Taslak aç…</option>
+          {draft.drafts.map((entry) => <option key={entry.document} value={entry.document}>{entry.label} · {new Date(entry.updatedAt).toLocaleDateString("tr-TR")}</option>)}
+        </select>
+        <button type="button" onClick={() => { setSavedNotice(false); draft.startNew(); }} className="underline underline-offset-4">Yeni CV başlat</button>
+        <button type="button" onClick={() => { setSavedNotice(false); draft.startNew({ form: { ...formData, id: undefined, title: undefined }, step: currentStep, beforeImport: null, pdfReview }); }} className="underline underline-offset-4">Kopya olarak devam et</button>
+        <button type="button" onClick={draft.downloadBackup} className="underline underline-offset-4">Taslak yedeğini indir</button>
+        <label className="cursor-pointer underline underline-offset-4">Yedeği aç<input type="file" accept="application/json,.json" aria-label="Taslak yedeği dosyası" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) { setSavedNotice(false); void draft.importBackup(file); } event.target.value = ""; }} /></label>
+      </div>
+      {savedNotice && <p role="status" className="mb-5 text-sm text-green-800 dark:text-green-300">CV başarıyla kaydedildi!</p>}
       <div hidden={currentStep !== 0}><PDFCVImport
         hasContent={Boolean(personalInfo.fullName || experiences.length || educations.length || skills.technical.length)}
         canUndo={Boolean(beforeImport)}
-        onApply={(cv) => { setBeforeImport(formData); applyForm({ ...cv, id: undefined, title: undefined }); setShowLinkedInImport(false); }}
+        review={pdfReview}
+        onReviewChange={setPdfReview}
+        onApply={(cv) => { setSavedNotice(false); draft.startNew({ form: cvFormSchema.parse({ ...cv, id: undefined, title: undefined }), step: 0,
+          beforeImport: formData, pdfReview: pdfReview ? { ...pdfReview, applied: true } : null }); setShowLinkedInImport(false); }}
         onUndo={() => { if (beforeImport) applyForm(beforeImport); setBeforeImport(null); }}
       /></div>
 
@@ -514,7 +500,7 @@ function CreateCVContent() {
             formData={formData}
             templateId={templateId}
             onTemplateChange={setTemplateId}
-            onSaved={setCvId}
+            onSaved={(id) => { setSavedNotice(true); draft.onSaved(id); }}
             onThemeChange={setTheme}
           />
         )}

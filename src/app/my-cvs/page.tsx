@@ -151,7 +151,7 @@ export default function MyCVsPage() {
       title: cv.title,
       id: cv.id,
     }));
-    router.push("/create-cv?edit=true");
+    router.push(`/create-cv?id=${encodeURIComponent(cv.id)}`);
   };
 
   const handleShare = async (cv: CreatedCVItem) => {
@@ -369,7 +369,7 @@ export default function MyCVsPage() {
                         id: cv.id,
                         title: cv.title,
                       }));
-                      router.push("/create-cv?download=true");
+                      router.push(`/create-cv?id=${encodeURIComponent(cv.id)}&download=true`);
                     }}
                     className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                   >
