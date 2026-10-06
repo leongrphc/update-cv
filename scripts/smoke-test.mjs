@@ -53,6 +53,8 @@ try {
     educations: [{ id: "edu", school: "University", field: "Computer Science", startDate: "2015", endDate: "2019", gpa: "3.5" }],
     skills: { technical: ["TypeScript"], soft: ["Communication"], languages: [{ id: "lang", language: "English", level: "C1" }],
       certifications: [{ id: "cert", name: "Certificate", issuer: "Example", date: "2024" }] },
+    customSections: [{ id: "project", title: "Projects", content: "Original project details" }],
+    targetRole: "Senior Developer",
     templateId: "modern", cvLang: "en",
     theme: { primaryColor: "#123456", accentColor: "#059669", fontFamily: "PT Serif", fontSize: 12.5 },
   };
@@ -66,7 +68,7 @@ try {
   };
   let saved = await list();
   assert.equal(saved.total, 1);
-  for (const key of ["personalInfo", "experiences", "educations", "skills", "cvLang", "theme"]) assert.deepEqual(saved.items[0][key], cv[key]);
+  for (const key of ["personalInfo", "experiences", "educations", "skills", "cvLang", "theme", "customSections", "targetRole"]) assert.deepEqual(saved.items[0][key], cv[key]);
   cv.personalInfo.summary = "Updated summary";
   response = await post("/api/save-cv", { ...cv, id }, cookie);
   assert.equal(response.status, 200);
@@ -87,6 +89,7 @@ try {
   const publicPage = await (await fetch(`${base}/share/${shareToken}`)).text();
   assert.ok(publicPage.includes("Smoke CV Owner") && publicPage.includes("Updated summary"));
   assert.ok(publicPage.includes("Professional Summary"));
+  assert.ok(publicPage.includes("Original project details"), "Public sharing preserves custom sections");
   assert.equal((await post("/api/share-cv", { cvId: id, action: "disable" }, cookie)).status, 200);
   const disabledPage = await (await fetch(`${base}/share/${shareToken}`)).text();
   assert.ok(!disabledPage.includes("Smoke CV Owner"), "Disabled share must not expose the CV");

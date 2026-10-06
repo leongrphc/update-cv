@@ -1,6 +1,6 @@
 "use client";
 
-import type { CVPersonalInfo, CVExperienceEntry, CVEducationEntry, CVSkillsData } from "@/types";
+import type { CVPersonalInfo, CVExperienceEntry, CVEducationEntry, CVSkillsData, CVCustomSection } from "@/types";
 import { getLabels, type CVLang } from "@/components/create-cv/cv-labels";
 
 interface PublicCVRendererProps {
@@ -9,6 +9,7 @@ interface PublicCVRendererProps {
   educations: CVEducationEntry[];
   skills: CVSkillsData;
   cvLang?: CVLang;
+  customSections?: CVCustomSection[];
 }
 
 export function PublicCVRenderer({
@@ -17,6 +18,7 @@ export function PublicCVRenderer({
   educations,
   skills,
   cvLang = "tr",
+  customSections = [],
 }: PublicCVRendererProps) {
   const labels = getLabels(cvLang);
   return (
@@ -170,6 +172,10 @@ export function PublicCVRenderer({
           </div>
         </section>
       )}
+      {customSections.map(section => <section key={section.id} className="mt-6 break-words">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-2">{section.title}</h2>
+        <p className="text-sm whitespace-pre-wrap leading-relaxed text-gray-700">{section.content}</p>
+      </section>)}
     </div>
   );
 }

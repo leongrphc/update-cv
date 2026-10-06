@@ -43,7 +43,7 @@ export function getLabels(lang?: CVLang) {
 
 export function formatDateL(date: string | undefined, lang?: CVLang): string {
   if (!date) return "";
-  if (date.includes("-")) {
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(date)) {
     const [year, month] = date.split("-");
     const l = getLabels(lang);
     return `${l.months[parseInt(month) - 1]} ${year}`;

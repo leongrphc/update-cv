@@ -48,6 +48,20 @@ describe("CV persistence", () => {
     expect((await POST(request({ ...cv, personalInfo: { ...cv.personalInfo, email: "" } }))).status).toBe(200);
   });
 
+  it("preserves custom section text and order, and the target role", async () => {
+    const customSections = [{ id: "publication", title: "Yayınlar", content: "Özgün çalışma\nİkinci satır" },
+      { id: "projects", title: "Projeler", content: "12 proje" }];
+    expect((await POST(request({ ...cv, customSections, targetRole: "Senior Developer" }))).status).toBe(200);
+    const { data } = mocks.create.mock.calls[0][0];
+    expect(JSON.parse(data.customSections)).toEqual(customSections);
+    expect(data.targetRole).toBe("Senior Developer");
+  });
+
+  it("rejects oversized custom sections without modifying the CV", async () => {
+    expect((await POST(request({ ...cv, customSections: [{ id: "x", title: "X", content: "x".repeat(50_001) }] }))).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
   it("rejects invalid language levels without writing a CV", async () => {
     const response = await POST(request({ ...cv, skills: { ...cv.skills,
       languages: [{ id: "lang", language: "English", level: "invalid" }] } }));

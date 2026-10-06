@@ -31,6 +31,8 @@ try {
         assert.equal(cv.shareToken, null);
         assert.equal(cv.cvLang, "tr");
         assert.equal(cv.theme, null);
+        assert.equal(cv.customSections, "[]");
+        assert.equal(cv.targetRole, null);
         await db.createdCV.update({ where: { id: cv.id }, data: { isPublic: true, shareToken: "test-token" } });
         assert.equal((await db.createdCV.findFirst({ where: { shareToken: "test-token", isPublic: true } })).id, cv.id);
       } else {

@@ -444,7 +444,15 @@ export interface CVSkillsData {
   certifications: CVCertificationEntry[];
 }
 
+export interface CVCustomSection {
+  id: string;
+  title: string;
+  content: string;
+}
+
 export interface CreateCVFormData {
+  customSections?: CVCustomSection[];
+  targetRole?: string;
   id?: string;
   personalInfo: CVPersonalInfo;
   experiences: CVExperienceEntry[];

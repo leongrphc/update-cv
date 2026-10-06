@@ -199,6 +199,8 @@ model CreatedCV {
   templateId    String   @default("modern")
   cvLang        String   @default("tr")
   theme         String?
+  customSections String @default("[]")
+  targetRole    String?
   title         String?
   shareToken    String?  @unique
   isPublic      Boolean  @default(false)

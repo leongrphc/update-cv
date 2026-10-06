@@ -5,6 +5,8 @@ const short = z.string().max(500).default("");
 const entryId = z.string().min(1).default(() => crypto.randomUUID());
 // Drafts can be incomplete or temporarily invalid while the user is typing.
 export const cvFormSchema = z.object({
+  customSections: z.array(z.object({ id: entryId, title: z.string().max(200), content: z.string().max(50_000) })).max(20).default([]),
+  targetRole: z.string().max(200).optional(),
   id: z.string().min(1).optional(), title: z.string().max(200).optional(),
   cvLang: z.enum(["tr", "en"]).default("tr"), theme: cvThemeSchema.optional(),
   templateId: z.enum(["modern", "classic", "creative", "executive", "minimal", "diamond"]).default("modern"),

@@ -11,5 +11,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   return NextResponse.json({ success: true, cv: { id: cv.id, title: cv.title || undefined,
     personalInfo: JSON.parse(cv.personalInfo), experiences: JSON.parse(cv.experiences),
     educations: JSON.parse(cv.educations), skills: JSON.parse(cv.skills), templateId: cv.templateId,
-    cvLang: cv.cvLang, theme: cv.theme ? JSON.parse(cv.theme) : undefined, updatedAt: cv.updatedAt } });
+    cvLang: cv.cvLang, theme: cv.theme ? JSON.parse(cv.theme) : undefined,
+        customSections: JSON.parse(cv.customSections || "[]"), targetRole: cv.targetRole || "", updatedAt: cv.updatedAt } });
 }

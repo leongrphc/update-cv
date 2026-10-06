@@ -71,7 +71,7 @@ export default function PDFCVImport({ hasContent, onApply, onUndo, canUndo, revi
             PDF’deki bilgileri kontrol ederek düzenlenebilir alanlara aktarın, ardından yeni bir şablonla indirin.
           </p>
           <p id="pdf-import-help" className="mt-2 text-xs text-slate-600 dark:text-slate-300">
-            En fazla 5 MB · Seçilebilir metin içeren PDF · Metin AI sağlayıcısına gönderilir.
+            En fazla 5 MB · Seçilebilir metin içeren PDF · AI bağlantısı varsa metin AI sağlayıcısıyla işlenir; yoksa kaynak metni kendiniz düzenleyebilirsiniz.
             Orijinal tasarım yeniden oluşturulmaz; yeni şablon uygulanır.
           </p>
         </div>
@@ -107,9 +107,9 @@ export default function PDFCVImport({ hasContent, onApply, onUndo, canUndo, revi
           <ul className="list-disc pl-5 space-y-1">{result.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
         </div>}
         <details className="text-sm">
-          <summary className="cursor-pointer font-medium text-slate-800 dark:text-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">Kaynak metin ve aktarılamayan bölümler</summary>
+          <summary className="cursor-pointer font-medium text-slate-800 dark:text-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">Kaynak metin ve özel bölümler</summary>
           {result.unmappedSections.map((section, index) => <div key={index} className="mt-3">
-            <p className="font-semibold">{section.heading} — yeni PDF’ye eklenmez</p>
+            <p className="font-semibold">{section.heading} — özel bölüm olarak PDF’ye eklenir</p>
             <p className="whitespace-pre-wrap break-words mt-1">{section.content}</p>
           </div>)}
           <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words font-sans leading-relaxed bg-slate-50 dark:bg-slate-900 p-3">{result.sourceText}</pre>

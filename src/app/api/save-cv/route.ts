@@ -8,6 +8,8 @@ const schema = z.object({
   id: z.string().min(1).optional(),
   cvLang: z.enum(["tr", "en"]).default("tr"),
   theme: cvThemeSchema.optional(),
+  customSections: z.array(z.object({ id: z.string().min(1), title: z.string().max(200), content: z.string().max(50_000) })).max(20).optional(),
+  targetRole: z.string().max(200).optional(),
   personalInfo: z.object({
     fullName: z.string().trim().min(1, "Ad gerekli").max(200),
     title: z.string().optional(),
@@ -76,9 +78,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { id, cvLang, theme, personalInfo, experiences, educations, skills, templateId, title } = v.data;
+    const { id, cvLang, theme, customSections, targetRole, personalInfo, experiences, educations, skills, templateId, title } = v.data;
 
     const data = {
+      ...(customSections ? { customSections: JSON.stringify(customSections) } : {}),
+      ...(targetRole !== undefined ? { targetRole } : {}),
       personalInfo: JSON.stringify(personalInfo),
       experiences: JSON.stringify(experiences),
       educations: JSON.stringify(educations),

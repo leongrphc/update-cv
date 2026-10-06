@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { emptyCV } from "./cv-form";
 import type { CreateCVFormData } from "@/types";
 
 const text = z.string();
@@ -50,9 +51,10 @@ export function prepareImportedCV(extracted: ExtractedCV): {
   if (fields.personalInfo.email && !z.string().email().safeParse(fields.personalInfo.email).success) {
     checks.push("E-posta biçimi geçerli görünmüyor; kaydetmeden önce düzeltin.");
   }
-  if (unmappedSections.length) checks.push("Bazı bölümler editör alanlarına aktarılamadı. Kaynak metin bölümünden kontrol edin; bu bölümler yeni PDF'ye otomatik eklenmez.");
+  if (unmappedSections.length) checks.push("Standart alanlara uymayan bölümler Özel bölümler alanına aktarıldı. Başlıkları ve içerik sırasını kontrol edin.");
   return {
     cv: { ...fields, templateId: "classic",
+      customSections: unmappedSections.map(section => ({ id: randomUUID(), title: section.heading, content: section.content })),
       experiences: fields.experiences.map((entry) => ({ ...entry, id: randomUUID() })),
       educations: fields.educations.map((entry) => ({ ...entry, id: randomUUID() })),
       skills: { ...fields.skills,
@@ -60,4 +62,11 @@ export function prepareImportedCV(extracted: ExtractedCV): {
         certifications: fields.skills.certifications.map((entry) => ({ ...entry, id: randomUUID() })) } },
     warnings: [...new Set(checks)], unmappedSections,
   };
+}
+
+export function prepareManualCV(sourceText: string) {
+  return { cv: { ...emptyCV(), templateId: "classic" as const,
+    customSections: [{ id: randomUUID(), title: "Kaynak CV", content: sourceText }] },
+    warnings: ["AI bağlantısı yapılandırılmamış; PDF metni değiştirilmeden tek bir özel bölüme aktarıldı. Kişisel bilgilerinizi doldurun, Özel bölümler adımında metni düzenleyin ve bölümlere ayırın."],
+    unmappedSections: [] };
 }

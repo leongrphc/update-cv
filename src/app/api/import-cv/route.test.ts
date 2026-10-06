@@ -64,9 +64,14 @@ describe("editable CV import", () => {
     expect((await POST(request())).status).toBe(413);
     expect(extractEditableCV).not.toHaveBeenCalled();
   });
-  it("explains missing AI configuration", async () => {
+  it("keeps all PDF text editable without AI configuration", async () => {
     vi.stubEnv("GOOGLE_GENERATIVE_AI_API_KEY", "");
-    expect((await POST(request())).status).toBe(503);
+    const response = await POST(request());
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.cv.personalInfo.fullName).toBe("");
+    expect(body.cv.customSections[0].content).toBe(body.sourceText);
+    expect(body.warnings.join(" ")).toContain("AI bağlantısı");
     expect(extractEditableCV).not.toHaveBeenCalled();
   });
   it("preserves facts, line breaks, uncertainty and unmapped sections with new entry IDs", async () => {
@@ -81,7 +86,8 @@ describe("editable CV import", () => {
     expect(body.sourceText).toContain("\nDeneyim\n");
     expect(body.unmappedSections).toEqual(extracted.unmappedSections);
     expect(body.warnings.join(" ")).toContain("Telefon");
-    expect(body.warnings.join(" ")).toContain("otomatik eklenmez");
+    expect(body.cv.customSections[0]).toMatchObject({ title: "Projeler", content: "Özgün proje açıklaması" });
+    expect(body.cv.customSections[0].id).toBeTruthy();
   });
   it("does not return invalid model output or leak source text in errors", async () => {
     vi.mocked(extractEditableCV).mockResolvedValue({ ...extracted, personalInfo: null } as never);

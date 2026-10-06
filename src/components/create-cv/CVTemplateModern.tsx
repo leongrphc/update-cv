@@ -1,4 +1,5 @@
 "use client";
+import CustomPDFSections from "./CustomPDFSections";
 
 import {
   Document,
@@ -284,6 +285,7 @@ export default function CVTemplateModern({ data, theme: customTheme }: CVTemplat
                 ))}
               </View>
             )}
+            <CustomPDFSections sections={data.customSections} titleStyle={styles.sectionTitle} textStyle={styles.bulletText} />
           </View>
 
           {/* Right Column */}

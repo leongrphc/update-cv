@@ -1,0 +1,2 @@
+ALTER TABLE "CreatedCV" ADD COLUMN "customSections" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "CreatedCV" ADD COLUMN "targetRole" TEXT;

@@ -42,6 +42,12 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
     onChange(updated);
   };
 
+  const move = (index: number, direction: number) => {
+    const reordered = [...data];
+    [reordered[index], reordered[index + direction]] = [reordered[index + direction], reordered[index]];
+    onChange(reordered);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -81,6 +87,9 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
             <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
               Eğitim {index + 1}
             </span>
+            <div className="flex items-center gap-3">
+              <button type="button" aria-label={`${index + 1}. eğitimi yukarı taşı`} disabled={index === 0} onClick={() => move(index, -1)} className="p-2 text-sm disabled:opacity-40">↑</button>
+              <button type="button" aria-label={`${index + 1}. eğitimi aşağı taşı`} disabled={index === data.length - 1} onClick={() => move(index, 1)} className="p-2 text-sm disabled:opacity-40">↓</button>
             {data.length > 0 && (
               <button
                 type="button"
@@ -89,7 +98,7 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
               >
                 Kaldır
               </button>
-            )}
+            )}</div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -99,6 +108,7 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
               </label>
               <input
                 type="text"
+                aria-label={`Okul ${index + 1}`}
                 value={edu.school}
                 onChange={(e) => updateEducation(index, "school", e.target.value)}
                 placeholder="örn: İstanbul Teknik Üniversitesi"
@@ -110,11 +120,13 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
                 Derece
               </label>
               <select
+                aria-label={`Derece ${index + 1}`}
                 value={edu.degree || ""}
                 onChange={(e) => updateEducation(index, "degree", e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               >
                 <option value="">Seçiniz</option>
+                {edu.degree && !["Lisans", "Yüksek Lisans", "Doktora", "Ön Lisans", "Lise"].includes(edu.degree) && <option value={edu.degree}>{edu.degree}</option>}
                 <option value="Lisans">Lisans</option>
                 <option value="Yüksek Lisans">Yüksek Lisans</option>
                 <option value="Doktora">Doktora</option>
@@ -131,6 +143,7 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
               </label>
               <input
                 type="text"
+                aria-label={`Alan ${index + 1}`}
                 value={edu.field || ""}
                 onChange={(e) => updateEducation(index, "field", e.target.value)}
                 placeholder="örn: Bilgisayar Mühendisliği"
@@ -144,18 +157,20 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  value={edu.startDate || ""}
+                  aria-label={`Eğitim başlangıcı ${index + 1}`}
+                value={edu.startDate || ""}
                   onChange={(e) => updateEducation(index, "startDate", e.target.value)}
                   placeholder="2018"
-                  className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="min-w-0 w-0 flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
                 <span className="self-center text-slate-400">-</span>
                 <input
                   type="text"
-                  value={edu.endDate || ""}
+                  aria-label={`Eğitim bitişi ${index + 1}`}
+                value={edu.endDate || ""}
                   onChange={(e) => updateEducation(index, "endDate", e.target.value)}
                   placeholder="2022"
-                  className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="min-w-0 w-0 flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
             </div>
@@ -165,6 +180,7 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
               </label>
               <input
                 type="text"
+                aria-label={`GPA ${index + 1}`}
                 value={edu.gpa || ""}
                 onChange={(e) => updateEducation(index, "gpa", e.target.value)}
                 placeholder="örn: 3.5/4.0"
@@ -178,7 +194,8 @@ export default function EducationStep({ data, onChange }: EducationStepProps) {
               Açıklama
             </label>
             <textarea
-              value={edu.description || ""}
+              aria-label={`Eğitim açıklaması ${index + 1}`}
+                value={edu.description || ""}
               onChange={(e) => updateEducation(index, "description", e.target.value)}
               rows={2}
               placeholder="Öne çıkan projeler, başarılar, etkinlikler..."

@@ -16,10 +16,11 @@ const cv = {
     summary: "Mevcut özet", linkedinUrl: "", websiteUrl: "" },
   experiences: [{ id: "import-exp", position: "Geliştirici", company: "Örnek", location: "", startDate: "2020", endDate: "", current: false, bullets: ["12 projeyi tamamladım."] }],
   educations: [], skills: { technical: ["TypeScript"], soft: [], languages: [{ id: "import-lang", language: "İngilizce", level: "" }], certifications: [] },
+  customSections: [{ id: "project", title: "Projeler", content: "Özgün proje açıklaması" }],
   templateId: "classic", cvLang: "tr",
 };
 const imported = { success: true, cv, sourceText: "Ayşe Öztürk\nDeneyim\n12 projeyi tamamladım.\nProjeler\nÖzgün proje açıklaması",
-  warnings: ["Telefon PDF’de bulunamadı.", "Projeler bölümü yeni PDF’ye otomatik eklenmez."],
+  warnings: ["Telefon PDF’de bulunamadı.", "Projeler bölümü özel bölüm olarak düzenlenebilir."],
   unmappedSections: [{ heading: "Projeler", content: "Özgün proje açıklaması" }] };
 
 const baseline = process.argv.includes("--baseline");
@@ -86,16 +87,18 @@ try {
       await expect(page.getByLabel("Profesyonel Özet", { exact: true })).toHaveValue("Kaybolmayan taslak özeti");
       const file = { name: `${"uzun-dosya-adi-".repeat(8)}.pdf`, mimeType: "application/pdf", buffer: pdfBytes };
       await page.getByLabel("CV PDF dosyası", { exact: true }).setInputFiles(file);
-      await expect(page.getByRole("region", { name: "Mevcut PDF CV’yi düzenle" }).getByRole("alert")).toContainText("AI bağlantısı henüz yapılandırılmamış", { timeout: 15_000 });
+      await expect(page.getByRole("heading", { name: "Aktarmadan önce kontrol edin" })).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByText("AI bağlantısı yapılandırılmamış;", { exact: false })).toBeVisible();
+      await page.getByRole("button", { name: "Vazgeç", exact: true }).click();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Önceki Aday");
-      // Real PDF parsing/missing configuration above; model output below is a deterministic fixture.
+      // Real manual import above; structured model output below is a deterministic fixture.
       await page.route("**/api/import-cv", (route) => route.fulfill({ json: imported }));
       await page.getByLabel("CV PDF dosyası", { exact: true }).setInputFiles(file);
       await expect(page.getByRole("heading", { name: "Aktarmadan önce kontrol edin" })).toBeVisible();
       await page.reload();
       await expect(page.getByRole("heading", { name: "Aktarmadan önce kontrol edin" })).toBeVisible();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Önceki Aday");
-      await page.getByText("Kaynak metin ve aktarılamayan bölümler", { exact: true }).click();
+      await page.getByText("Kaynak metin ve özel bölümler", { exact: true }).click();
       await expect(page.locator("pre")).toContainText("12 projeyi tamamladım.");
       await page.getByRole("button", { name: "Kontrol ettim, alanlara aktar" }).click();
       await expect(page.getByLabel("Ad Soyad *", { exact: true })).toHaveValue("Ayşe Öztürk");
@@ -110,7 +113,18 @@ try {
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Horizontal overflow");
       await page.screenshot({ path: `.agent/editor-after-${name}.png`, fullPage: true });
       await page.route("**/fonts/open-sans/*", (route) => route.fulfill({ status: 503, body: "Temporary font failure" }));
-      for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      for (let step = 0; step < 3; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await expect(page.getByLabel("Bölüm içeriği 1", { exact: true })).toHaveValue("Özgün proje açıklaması");
+      await page.getByRole("button", { name: "Bölüm ekle", exact: true }).click();
+      await page.getByLabel("Bölüm başlığı 2", { exact: true }).fill("Yayınlar");
+      await page.getByLabel("Bölüm içeriği 2", { exact: true }).fill("Ölçüm yöntemleri çalışması.");
+      await page.getByRole("button", { name: "2. bölümü yukarı taşı", exact: true }).click();
+      await page.getByLabel("Bölüm başlığı 1", { exact: true }).fill("Araştırma yayınları");
+      await page.reload();
+      await expect(page.getByLabel("Bölüm başlığı 1", { exact: true })).toHaveValue("Araştırma yayınları");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Custom sections must fit mobile");
+      await page.screenshot({ path: `.agent/sections-after-${name}.png`, fullPage: true });
+      await page.getByRole("button", { name: "Sonraki" }).click();
       await expect(page.getByRole("region", { name: "PDF önizlemesi" }).getByRole("alert")).toContainText("PDF oluşturulamadı", { timeout: 20_000 });
       await page.unroute("**/fonts/open-sans/*");
       await page.getByRole("button", { name: "PDF’yi tekrar oluştur" }).click();
@@ -143,12 +157,15 @@ try {
         const { text } = await parser.getText();
         assert.ok(text.includes("AYŞE ÖZTÜRK"), "Turkish name must remain searchable in the PDF");
         assert.ok(text.includes("12 projeyi tamamladım."), "Original achievements must remain intact");
-        assert.ok(!text.includes("Özgün proje açıklaması"), "Unmapped sections must match the explicit warning");
+        assert.ok(text.includes("Özgün proje açıklaması"), "Imported projects must be included in the PDF");
+        assert.ok(text.indexOf("Ölçüm yöntemleri çalışması.") < text.indexOf("Özgün proje açıklaması"), "Custom section order must be preserved");
       } finally { await parser.destroy(); }
       const reimport = await context.request.post(`${base}/api/import-cv`, { multipart: { file: {
         name: "exported.pdf", mimeType: "application/pdf", buffer: downloadedPDF,
       } } });
-      assert.equal(reimport.status(), 503, "Exported PDF must parse successfully before the missing AI configuration check");
+      assert.equal(reimport.status(), 200, "Exported PDF must remain editable without AI keys");
+      const reimported = await reimport.json();
+      assert.ok(reimported.cv.customSections[0].content.includes("Özgün proje açıklaması"));
       await page.getByRole("button", { name: "Kaydet", exact: true }).click();
       await expect(page.getByText("CV başarıyla kaydedildi!", { exact: true })).toBeVisible();
       const list = await (await context.request.get(`${base}/api/my-cvs`)).json();
@@ -156,6 +173,8 @@ try {
       const newCV = list.createdCVs.items.find((item) => item.id !== id && item.personalInfo.fullName === "Ayşe Öztürk");
       assert.ok(newCV, "Imported PDF must create a new CV");
       assert.equal(newCV.skills.languages[0].level, "");
+      assert.equal(newCV.customSections[0].title, "Araştırma yayınları");
+      assert.equal(newCV.customSections[1].content, "Özgün proje açıklaması");
       assert.equal(newCV.theme.fontFamily, "Lato");
       assert.equal(newCV.theme.fontSize, 14);
       assert.equal(newCV.theme.accentColor, "#059669");

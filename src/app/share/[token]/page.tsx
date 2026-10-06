@@ -56,6 +56,7 @@ export default async function ShareCVPage({ params }: Props) {
         experiences={experiences}
         educations={educations}
         skills={skills}
+        customSections={JSON.parse(cv.customSections || "[]")}
         cvLang={cv.cvLang === "en" ? "en" : "tr"}
       />
     </div>

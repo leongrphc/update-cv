@@ -1,4 +1,5 @@
 "use client";
+import CustomPDFSections from "./CustomPDFSections";
 
 import {
   Document,
@@ -421,6 +422,7 @@ export default function CVTemplateExecutive({ data }: { data: CreateCVFormData }
           )}
 
         </View>
+        <CustomPDFSections sections={data.customSections} titleStyle={styles.sectionTitle} textStyle={styles.bulletText} />
       </Page>
     </Document>
   );

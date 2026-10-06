@@ -21,6 +21,7 @@ const data: CreateCVFormData = {
   experiences: [{ id: "experience", position: "Geliştirici", company: "Örnek", startDate: "2020",
     current: true, bullets: Array.from({ length: 60 }, (_, index) => `Kayıt ${index}: İş süreçlerinde ölçüm, geliştirme ve değerlendirme yaptım. TypeScript ile uygulamalar geliştirdim.`) }],
   educations: [], skills: { technical: ["TypeScript"], soft: [], languages: [{ id: "language", language: "İngilizce", level: "" }], certifications: [] },
+  customSections: [{ id: "projects", title: "Özgün Projeler", content: "Çağrı kayıtları projesi\n12 teslimat gerçekleştirdim." }, { id: "pub", title: "Yayınlar", content: "Ölçüm yöntemleri çalışması." }],
   templateId: "classic", cvLang: "tr",
 };
 
@@ -44,6 +45,10 @@ describe("professional PDF exports", () => {
         expect(text.toLocaleLowerCase("tr")).toContain("ayşe öztürk");
         expect(text).toContain("Çağrı ve ölçüm");
         for (let index = 0; index < 60; index++) expect(text).toContain(`Kayıt ${index}:`);
+        expect(text).toContain("Çağrı kayıtları projesi");
+        expect(text).toContain("12 teslimat gerçekleştirdim.");
+        expect(text).toContain("Ölçüm yöntemleri çalışması.");
+        expect(text.indexOf("Çağrı kayıtları projesi")).toBeLessThan(text.indexOf("Ölçüm yöntemleri çalışması."));
         expect(outboundRequests).toEqual([]);
       } finally { await parser.destroy(); }
     }, 20_000);

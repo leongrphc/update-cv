@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { extractTextFromPDF } from "@/lib/pdf-parser";
 import { extractEditableCV } from "@/lib/llm-client";
-import { prepareImportedCV } from "@/lib/cv-import";
+import { prepareImportedCV, prepareManualCV } from "@/lib/cv-import";
 
 export const runtime = "nodejs";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -36,8 +36,8 @@ export async function POST(request: NextRequest) {
     if (sourceText.length > 50_000) {
       return NextResponse.json({ success: false, error: "PDF metni çok uzun. Yalnızca CV sayfalarını içeren bir dosya yükleyin." }, { status: 413 });
     }
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY && !process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ success: false, error: "PDF'yi düzenlenebilir alanlara aktarmak için AI bağlantısı henüz yapılandırılmamış." }, { status: 503 });
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim() && !process.env.OPENAI_API_KEY?.trim()) {
+      return NextResponse.json({ success: true, ...prepareManualCV(sourceText), sourceText });
     }
     const result = prepareImportedCV(await extractEditableCV(sourceText));
     return NextResponse.json({ success: true, ...result, sourceText });

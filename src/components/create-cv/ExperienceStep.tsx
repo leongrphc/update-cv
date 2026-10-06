@@ -76,6 +76,12 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
     updateBullet(expIndex, bulletIndex, enhanced);
   };
 
+  const move = (index: number, direction: number) => {
+    const reordered = [...data];
+    [reordered[index], reordered[index + direction]] = [reordered[index + direction], reordered[index]];
+    onChange(reordered);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -115,6 +121,9 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
             <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
               Deneyim {expIndex + 1}
             </span>
+            <div className="flex items-center gap-3">
+              <button type="button" aria-label={`${expIndex + 1}. deneyimi yukarı taşı`} disabled={expIndex === 0} onClick={() => move(expIndex, -1)} className="p-2 text-sm disabled:opacity-40">↑</button>
+              <button type="button" aria-label={`${expIndex + 1}. deneyimi aşağı taşı`} disabled={expIndex === data.length - 1} onClick={() => move(expIndex, 1)} className="p-2 text-sm disabled:opacity-40">↓</button>
             {data.length > 0 && (
               <button
                 type="button"
@@ -123,7 +132,7 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
               >
                 Kaldır
               </button>
-            )}
+            )}</div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -133,6 +142,7 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
               </label>
               <input
                 type="text"
+                aria-label={`Pozisyon ${expIndex + 1}`}
                 value={exp.position}
                 onChange={(e) => updateExperience(expIndex, "position", e.target.value)}
                 placeholder="örn: Frontend Developer"
@@ -145,6 +155,7 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
               </label>
               <input
                 type="text"
+                aria-label={`Şirket ${expIndex + 1}`}
                 value={exp.company}
                 onChange={(e) => updateExperience(expIndex, "company", e.target.value)}
                 placeholder="örn: ABC Teknoloji"
@@ -160,6 +171,7 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
               </label>
               <input
                 type="text"
+                aria-label={`Deneyim konumu ${expIndex + 1}`}
                 value={exp.location || ""}
                 onChange={(e) => updateExperience(expIndex, "location", e.target.value)}
                 placeholder="örn: İstanbul"
@@ -171,7 +183,9 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
                 Başlangıç *
               </label>
               <input
-                type="month"
+                type="text"
+                  placeholder="2020 veya 2020-03"
+                aria-label={`Deneyim başlangıcı ${expIndex + 1}`}
                 value={exp.startDate}
                 onChange={(e) => updateExperience(expIndex, "startDate", e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -183,8 +197,10 @@ export default function ExperienceStep({ data, onChange }: ExperienceStepProps) 
               </label>
               <div className="space-y-2">
                 <input
-                  type="month"
-                  value={exp.endDate || ""}
+                  type="text"
+                  placeholder="2020 veya 2020-03"
+                  aria-label={`Deneyim bitişi ${expIndex + 1}`}
+                value={exp.endDate || ""}
                   onChange={(e) => updateExperience(expIndex, "endDate", e.target.value)}
                   disabled={exp.current}
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:opacity-50"

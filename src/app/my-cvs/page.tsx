@@ -34,6 +34,8 @@ interface CVItem {
 }
 
 interface CreatedCVItem {
+  customSections?: import("@/types").CVCustomSection[];
+  targetRole?: string;
   theme?: import("@/types").CVTemplateTheme;
   id: string;
   title: string;
@@ -147,7 +149,8 @@ export default function MyCVsPage() {
       skills: cv.skills,
       templateId: cv.templateId,
       cvLang: cv.cvLang,
-        theme: cv.theme,
+      theme: cv.theme,
+      customSections: cv.customSections, targetRole: cv.targetRole,
       title: cv.title,
       id: cv.id,
     }));
@@ -366,6 +369,7 @@ export default function MyCVsPage() {
                         templateId: cv.templateId,
                         cvLang: cv.cvLang,
         theme: cv.theme,
+      customSections: cv.customSections, targetRole: cv.targetRole,
                         id: cv.id,
                         title: cv.title,
                       }));

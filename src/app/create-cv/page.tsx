@@ -7,6 +7,7 @@ import StepIndicator from "@/components/create-cv/StepIndicator";
 import PersonalInfoStep from "@/components/create-cv/PersonalInfoStep";
 import ExperienceStep from "@/components/create-cv/ExperienceStep";
 import EducationStep from "@/components/create-cv/EducationStep";
+import CustomSectionsEditor from "@/components/create-cv/CustomSectionsEditor";
 import SkillsStep from "@/components/create-cv/SkillsStep";
 import PreviewStep from "@/components/create-cv/PreviewStep";
 import { useEditorDraft } from "@/components/create-cv/useEditorDraft";
@@ -24,6 +25,7 @@ import {
   CVSkillsData,
   LinkedInProfile,
   CVTemplateTheme,
+  CVCustomSection,
 } from "@/types";
 
 const initialPersonalInfo: CVPersonalInfo = {
@@ -146,6 +148,8 @@ function CreateCVContent() {
     "modern" | "classic" | "creative" | "executive" | "minimal" | "diamond"
   >("modern");
   const [cvLang, setCvLang] = useState<"tr" | "en">("tr");
+  const [customSections, setCustomSections] = useState<CVCustomSection[]>([]);
+  const [targetRole, setTargetRole] = useState("");
   const [theme, setTheme] = useState<CVTemplateTheme>();
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [pdfReview, setPdfReview] = useState<PDFImportReview | null>(null);
@@ -167,7 +171,7 @@ function CreateCVContent() {
     skills,
     templateId,
     cvLang,
-    theme,
+    theme, customSections, targetRole,
   };
 
   const applyForm = useCallback((cv: CreateCVFormData) => {
@@ -180,6 +184,8 @@ function CreateCVContent() {
     setTemplateId(cv.templateId);
     setCvLang(cv.cvLang || "tr");
     setTheme(cv.theme);
+    setCustomSections(cv.customSections || []);
+    setTargetRole(cv.targetRole || "");
   }, []);
 
   const restoreSnapshot = useCallback((saved: EditorSnapshot) => {
@@ -241,10 +247,7 @@ function CreateCVContent() {
 
   const handleLinkedInParsed = (profile: LinkedInProfile) => {
     const mapped = mapLinkedInToForm(profile);
-    setPersonalInfo(mapped.personalInfo);
-    setExperiences(mapped.experiences);
-    setEducations(mapped.educations);
-    setSkills(mapped.skills);
+    draft.startNew({ form: cvFormSchema.parse({ ...mapped, templateId: "classic", cvLang }), step: 0, beforeImport: formData, pdfReview: null });
     setShowLinkedInImport(false);
     setLinkedInImported(true);
     setLinkedInError(null);
@@ -473,18 +476,21 @@ function CreateCVContent() {
           {currentStep === 0 && "Kişisel Bilgiler"}
           {currentStep === 1 && "İş Deneyimi"}
           {currentStep === 2 && "Eğitim Bilgileri"}
-          {currentStep === 3 && "Beceriler, Diller & Sertifikalar"}
+          {currentStep === 3 && "Beceriler & Özel Bölümler"}
           {currentStep === 4 && "Önizleme & İndirme"}
         </h2>
 
         {/* Step Content */}
         {currentStep === 0 && (
+          <><div className="mb-6"><label htmlFor="cv-target-role" className="block text-sm font-medium mb-1">Başvuracağınız pozisyon (isteğe bağlı)</label>
+            <input id="cv-target-role" value={targetRole} maxLength={200} onChange={event => setTargetRole(event.target.value)} placeholder="Örn. Kıdemli Yazılım Geliştirici" className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800" />
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">AI önerilerinin odağını belirler; CV’ye ayrı bir alan olarak yazılmaz.</p></div>
           <PersonalInfoStep
             data={personalInfo}
             onChange={setPersonalInfo}
             onGenerateSummary={handleGenerateSummary}
             isGeneratingSummary={isGeneratingSummary}
-          />
+          /></>
         )}
         {currentStep === 1 && (
           <ExperienceStep data={experiences} onChange={setExperiences} />
@@ -493,7 +499,8 @@ function CreateCVContent() {
           <EducationStep data={educations} onChange={setEducations} />
         )}
         {currentStep === 3 && (
-          <SkillsStep data={skills} onChange={setSkills} />
+          <><SkillsStep data={skills} onChange={setSkills} />
+            <CustomSectionsEditor data={customSections} onChange={setCustomSections} /></>
         )}
         {currentStep === 4 && (
           <PreviewStep

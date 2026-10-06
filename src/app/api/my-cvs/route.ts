@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
         templateId: cv.templateId,
         cvLang: cv.cvLang,
         theme: cv.theme ? JSON.parse(cv.theme) : undefined,
+        customSections: JSON.parse(cv.customSections || "[]"), targetRole: cv.targetRole || "",
         experienceCount: experiences.length,
         educationCount: educations.length,
         skillCount: skills.technical?.length || 0,
