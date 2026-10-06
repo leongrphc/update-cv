@@ -6,31 +6,12 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   Link,
 } from "@react-pdf/renderer";
 import { CreateCVFormData } from "@/types";
 import { getLabels, formatDateL } from "./cv-labels";
 
-Font.register({
-  family: "Open Sans",
-  fonts: [
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-regular.ttf",
-      fontWeight: 400,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-600.ttf",
-      fontWeight: 600,
-    },
-    {
-      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-700.ttf",
-      fontWeight: 700,
-    },
-  ],
-});
-
-Font.registerHyphenationCallback((word) => [word]);
+import "./pdf-fonts";
 
 const colors = {
   black: "#000000",

@@ -13,12 +13,19 @@ PDF olarak CV'ni yükleyip, başvurmak istediğin iş ilanını yapıştırıyor
 - **Eksik Beceri Analizi**: Hangi becerilerini geliştirmen gerektiğini gör
 - **Mülakat Simülasyonu**: Pozisyona özel sorularla pratik yap
 - **LinkedIn Entegrasyonu**: LinkedIn profilini CV'nle birleştir
+- **PDF CV Düzenleme**: Mevcut PDF'yi kontrol ederek form alanlarına aktar, düzenle, altı şablondan birini seç ve gerçek PDF önizlemesiyle indir.
 
 ## Önemli not
 
-Uygulama yalan bilgi eklemiyor. Sadece mevcut deneyimlerini daha iyi ifade etmene yardımcı oluyor.
+AI'dan mevcut bilgileri koruması istenir; otomatik çıkarım ve öneriler hata içerebilir. Tarihleri, iletişim bilgilerini ve başarıları kaynak CV ile karşılaştırın.
+
+PDF düzenleme için **CV Oluştur → PDF CV yükle → Kontrol ettim, alanlara aktar** akışını kullanın. İçe aktarma mevcut formu otomatik değiştirmez, geri alınabilir ve eski CV kaydının üzerine yazmaz. Son adımda gerçek PDF görüntülenir; indirilen dosya önizlemeyle aynıdır.
+
+Seçilebilir metin içeren, en fazla 5 MB PDF desteklenir. Taranmış belgelerde önce OCR gerekir. PDF metni yapılandırılan AI sağlayıcısına gönderilir. Orijinal PDF tasarımı korunmaz; seçtiğiniz şablon uygulanır. Proje/yayın gibi editörde alanı olmayan bölümler kaynak metinde gösterilir ve yeni PDF'ye otomatik eklenmez. Kaydetmeden ayrılınca veya sayfayı yenileyince kaydedilmemiş düzenlemeler ve içe aktarma incelemesi kaybolabilir. AI bağlantısı için `.env` içinde Google veya OpenAI anahtarı gereklidir.
 
 ## Çalıştırmak için
+
+Node.js 22.3 veya üzeri gerekir; CI Node.js 24 kullanır.
 
 ```
 npm ci

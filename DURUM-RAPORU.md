@@ -2,6 +2,14 @@
 
 6 Ekim 2026. Proje mevcut klasöre klonlandı; geliştirmeler sırayla commit edilerek `main` dalına gönderildi.
 
+Profesyonel CV düzenleme için yeni akış: **PDF yükle → çıkarılan bilgileri ve kaynak metni kontrol et → alanlara aktar → düzenle → şablon seç → gerçek PDF önizlemesi → indir/kaydet**. İçe aktarma geri alınabilir; eski CV kaydı korunur. Eksik bilgiler boş kalır, belirsizlikler ve aktarılamayan bölümler gösterilir. Bilgi çıkarımı AI gerektirir ve kullanıcı kontrolünden geçmelidir. PDF okuyucu, uygulamanın kendi çıktısını tekrar okuyabilecek sürüme güncellendi. Üç Open Sans fontu lisansıyla projeye alındı; altı şablon dış font sunucusu gerektirmez. Önizleme ve indirilen PDF aynı dosyayı kullanır.
+
+Bu turda `8592d40` ile PDF içe aktarma API'si, `0a57fb8` ile kontrol/geri alma ekranı, PDF okuyucu güncellemesi ve tarayıcı testleri ayrı ayrı gönderildi. Son geliştirme gerçek PDF önizlemesi ve fontları içerir.
+
+Bu akış masaüstü ve mobil tarayıcıda geçti: hatada mevcut alanların korunması, onay öncesinde formun değişmemesi, geri alma, yeni kayıt oluşturma, tekrar kayıtta kopya oluşmaması, PDF hatasından sonra tekrar deneme, Türkçe metnin PDF'de aranabilir kalması, önizleme/indirme eşitliği ve çıktının yeniden okunması. Altı şablonda çok sayfalı CV metninin korunması ayrıca doğrulandı. Güncel toplam: 15 dosyada 92 test; lint, üretim derlemesi ve çalışan uygulama kontrolleri geçti. Üretim audit'i 0 uyarı. Canlı AI çıkarımı anahtar olmadığı için doğrulanmadı; testlerde model cevabı sabit örnek verilerle sağlandı.
+
+Profesyonel editör için sonraki eksikler: otomatik taslak kaydı ve yenilemede geri yükleme; tema ayarlarının kalıcı kaydı; proje/yayın gibi özel bölümleri düzenleme; AI önerilerini uygulamadan önce karşılaştırma ve hedef ilana göre yönlendirme; gerçek kullanıcı PDF'leriyle çıkarım/sayfa düzeni kontrolü. Taranmış PDF'lerde OCR ve orijinal tasarımı birebir düzenleme bu sürümde yok.
+
 CV oluşturma ve optimizasyon, 6 PDF şablonu, ATS puanı, ön yazı, mülakat, LinkedIn aktarımı, Apify iş arama, bildirimler ve CV paylaşımı mevcut. Altyapı Next.js 15.5.27, React 19, AI SDK 6, TypeScript ve Prisma/SQLite olarak güncellendi.
 
 Tamamlanan geliştirmeler:
@@ -20,7 +28,7 @@ Tamamlanan geliştirmeler:
 
 Ayrıca `npm run setup` ile mevcut ayarları koruyan, rastgele yerel anahtarlar üreten kurulum ve GitHub Actions doğrulama akışı eklendi. Actions paketleri güncel v7 sürümlerine taşındı ve CI ortamı Ubuntu 24.04 olarak sabitlendi. Lint uyarıları giderildi. Yerel veritabanının migration öncesi yedeği `prisma/dev.db.before-migrations` dosyasında tutuluyor; Git'e gönderilmiyor.
 
-Doğrulama: 12 test dosyasında 71 test geçti. Boş ve mevcut veritabanı migration testleri başarılı. Lint hatasız ve uyarısız. Üretim bağımlılık audit'i 0 uyarı bildiriyor. Üretim derlemesi başarılı; çalışan uygulamada CV kaydetme–yeniden açma–güncelleme–paylaşımı açma/kapatma, dil koruma ve başka kullanıcının CV'sini değiştirememe kontrolleri geçti.
+Önceki altyapı doğrulaması: 12 test dosyasında 71 test geçti. Boş ve mevcut veritabanı migration testleri başarılı. Lint hatasız ve uyarısız. Üretim bağımlılık audit'i 0 uyarı bildiriyor. Üretim derlemesi başarılı; çalışan uygulamada CV kaydetme–yeniden açma–güncelleme–paylaşımı açma/kapatma, dil koruma ve başka kullanıcının CV'sini değiştirememe kontrolleri geçti.
 
 Kalan kurulum ve sınırlar:
 

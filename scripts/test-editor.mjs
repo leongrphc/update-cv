@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { mkdtempSync, readdirSync, unlinkSync, rmdirSync, mkdirSync } from "node:fs";
+import { mkdtempSync, readdirSync, unlinkSync, rmdirSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -9,6 +9,7 @@ import { once } from "node:events";
 import { chromium, expect } from "@playwright/test";
 import React from "react";
 import { Document, Page, Text, renderToBuffer } from "@react-pdf/renderer";
+import { PDFParse } from "pdf-parse";
 
 const cv = {
   personalInfo: { fullName: "Ayşe Öztürk", title: "", email: "", phone: "", location: "İstanbul",
@@ -22,6 +23,7 @@ const imported = { success: true, cv, sourceText: "Ayşe Öztürk\nDeneyim\n12 p
   unmappedSections: [{ heading: "Projeler", content: "Özgün proje açıklaması" }] };
 
 const baseline = process.argv.includes("--baseline");
+const baselinePreview = process.argv.includes("--baseline-preview");
 const directory = mkdtempSync(join(tmpdir(), "update-cv-editor-"));
 const env = { ...process.env, NODE_ENV: "production",
   DATABASE_URL: `file:${join(directory, "editor.db").replaceAll("\\", "/")}`,
@@ -64,7 +66,11 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${base}/create-cv`);
     await expect(page.getByRole("heading", { name: "Kişisel Bilgiler", exact: true })).toBeVisible();
-    if (baseline) {
+    if (baselinePreview) {
+      await page.getByLabel("Ad Soyad *", { exact: true }).fill("Ayşe Öztürk");
+      for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await page.screenshot({ path: `.agent/preview-before-${name}.png`, fullPage: true });
+    } else if (baseline) {
       await page.screenshot({ path: `.agent/editor-before-${name}.png`, fullPage: true });
     } else {
       const original = { ...cv, personalInfo: { ...cv.personalInfo, fullName: "Önceki Aday" } };
@@ -93,7 +99,36 @@ try {
       await page.getByRole("button", { name: "Kontrol ettim, alanlara aktar" }).click();
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Horizontal overflow");
       await page.screenshot({ path: `.agent/editor-after-${name}.png`, fullPage: true });
+      await page.route("**/fonts/open-sans/*", (route) => route.fulfill({ status: 503, body: "Temporary font failure" }));
       for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await expect(page.getByRole("region", { name: "PDF önizlemesi" }).getByRole("alert")).toContainText("PDF oluşturulamadı", { timeout: 20_000 });
+      await page.unroute("**/fonts/open-sans/*");
+      await page.getByRole("button", { name: "PDF’yi tekrar oluştur" }).click();
+      await expect(page.getByRole("button", { name: "PDF Olarak İndir" })).toBeEnabled({ timeout: 20_000 });
+      await expect(page.getByTitle("CV PDF önizlemesi")).toBeVisible();
+      await page.screenshot({ path: `.agent/preview-after-${name}.png`, fullPage: true });
+      const downloadPending = page.waitForEvent("download");
+      await page.getByRole("button", { name: "PDF Olarak İndir" }).click();
+      const download = await downloadPending;
+      const target = `.agent/imported-${name}.pdf`;
+      await download.saveAs(target);
+      const downloadedPDF = readFileSync(target);
+      const previewBytes = await page.getByTitle("CV PDF önizlemesi").evaluate(async (frame) => {
+        const response = await fetch(frame.src);
+        return Array.from(new Uint8Array(await response.arrayBuffer()));
+      });
+      assert.deepEqual(downloadedPDF, Buffer.from(previewBytes), "Download must match the displayed PDF");
+      const parser = new PDFParse({ data: new Uint8Array(downloadedPDF) });
+      try {
+        const { text } = await parser.getText();
+        assert.ok(text.includes("AYŞE ÖZTÜRK"), "Turkish name must remain searchable in the PDF");
+        assert.ok(text.includes("12 projeyi tamamladım."), "Original achievements must remain intact");
+        assert.ok(!text.includes("Özgün proje açıklaması"), "Unmapped sections must match the explicit warning");
+      } finally { await parser.destroy(); }
+      const reimport = await context.request.post(`${base}/api/import-cv`, { multipart: { file: {
+        name: "exported.pdf", mimeType: "application/pdf", buffer: downloadedPDF,
+      } } });
+      assert.equal(reimport.status(), 503, "Exported PDF must parse successfully before the missing AI configuration check");
       await page.getByRole("button", { name: "Kaydet", exact: true }).click();
       await expect(page.getByText("CV başarıyla kaydedildi!", { exact: true })).toBeVisible();
       const list = await (await context.request.get(`${base}/api/my-cvs`)).json();

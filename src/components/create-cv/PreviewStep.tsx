@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
-import { Download, Loader2, Save, Paintbrush } from "lucide-react";
+import { Download, Loader2, Save, Paintbrush, ExternalLink } from "lucide-react";
 import { CreateCVFormData, PDFTemplateId, type CVTemplateTheme, DEFAULT_THEME } from "@/types";
 import CVTemplateModern from "./CVTemplateModern";
 import CVTemplateClassic from "./CVTemplateClassic";
@@ -11,6 +11,7 @@ import CVTemplateExecutive from "./CVTemplateExecutive";
 import CVTemplateMinimal from "./CVTemplateMinimal";
 import CVTemplateDiamond from "./CVTemplateDiamond";
 import TemplateThemeEditor from "./TemplateThemeEditor";
+import { reloadPDFFonts } from "./pdf-fonts";
 
 interface PreviewStepProps {
   formData: CreateCVFormData;
@@ -69,6 +70,17 @@ function getTemplateComponent(data: CreateCVFormData, theme?: CVTemplateTheme) {
   }
 }
 
+// React PDF shares its renderer; serialize jobs while the user changes templates quickly.
+let renderQueue: Promise<unknown> = Promise.resolve();
+function renderDocument(doc: ReturnType<typeof getTemplateComponent>, reloadFonts: boolean) {
+  const job = renderQueue.then(() => {
+    if (reloadFonts) reloadPDFFonts();
+    return pdf(doc).toBlob();
+  });
+  renderQueue = job.catch(() => undefined);
+  return job;
+}
+
 export default function PreviewStep({
   formData,
   templateId,
@@ -81,15 +93,34 @@ export default function PreviewStep({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [theme, setTheme] = useState<CVTemplateTheme>(DEFAULT_THEME);
   const [showThemeEditor, setShowThemeEditor] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const previewData = JSON.stringify({ ...formData, id: undefined, title: undefined });
+  const doc = useMemo(() => getTemplateComponent(JSON.parse(previewData), theme), [previewData, theme]);
 
-  const handleDownload = async () => {
+  useEffect(() => {
+    let active = true;
+    let url: string | undefined;
+    setPdfUrl(null);
+    setPdfError(null);
     setIsGenerating(true);
-    try {
-      const doc = getTemplateComponent(formData, theme);
-      const blob = await pdf(doc).toBlob();
-      const url = URL.createObjectURL(blob);
+    const timer = setTimeout(() => {
+      void renderDocument(doc, retry > 0).then((blob) => {
+        if (!active) return;
+        url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+      }).catch(() => {
+        if (active) setPdfError("PDF oluşturulamadı. Tekrar deneyin veya başka bir şablon seçin; CV bilgileriniz korunuyor.");
+      }).finally(() => { if (active) setIsGenerating(false); });
+    }, 250);
+    return () => { active = false; clearTimeout(timer); if (url) URL.revokeObjectURL(url); };
+  }, [doc, retry]);
+
+  const handleDownload = () => {
+    if (pdfUrl) {
       const link = document.createElement("a");
-      link.href = url;
+      link.href = pdfUrl;
       const safeName = formData.personalInfo.fullName
         .toLowerCase()
         .replace(/\s+/g, "-")
@@ -98,11 +129,6 @@ export default function PreviewStep({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("PDF generation error:", error);
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -137,12 +163,13 @@ export default function PreviewStep({
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
           Şablon Seçimi
         </label>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
           {templates.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => onTemplateChange(t.id)}
+              aria-pressed={templateId === t.id}
               className={`p-4 border-2 rounded-sm text-left transition-all ${
                 templateId === t.id
                   ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
@@ -186,76 +213,29 @@ export default function PreviewStep({
         </div>
       )}
 
-      {/* CV Summary Preview */}
-      <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm p-5">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
-          CV Özeti
-        </h3>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-slate-500 dark:text-slate-400">Ad:</span>{" "}
-            <span className="text-slate-900 dark:text-slate-100 font-medium">
-              {formData.personalInfo.fullName}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 dark:text-slate-400">Ünvan:</span>{" "}
-            <span className="text-slate-900 dark:text-slate-100 font-medium">
-              {formData.personalInfo.title}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 dark:text-slate-400">Deneyim:</span>{" "}
-            <span className="text-slate-900 dark:text-slate-100 font-medium">
-              {formData.experiences.length} pozisyon
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 dark:text-slate-400">Eğitim:</span>{" "}
-            <span className="text-slate-900 dark:text-slate-100 font-medium">
-              {formData.educations.length} kayıt
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 dark:text-slate-400">Teknik Beceriler:</span>{" "}
-            <span className="text-slate-900 dark:text-slate-100 font-medium">
-              {formData.skills.technical.length}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 dark:text-slate-400">Diller:</span>{" "}
-            <span className="text-slate-900 dark:text-slate-100 font-medium">
-              {formData.skills.languages.length}
-            </span>
-          </div>
+      <section aria-labelledby="pdf-preview-heading" aria-busy={isGenerating} className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 id="pdf-preview-heading" className="font-semibold text-slate-900 dark:text-slate-100">PDF önizlemesi</h3>
+          {pdfUrl && <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 underline underline-offset-4">
+            <ExternalLink className="w-4 h-4" /> Önizlemeyi ayrı sekmede aç
+          </a>}
         </div>
-
-        {/* Skills Preview */}
-        {formData.skills.technical.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <span className="text-xs text-slate-500 dark:text-slate-400 block mb-2">
-              Teknik Beceriler:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {formData.skills.technical.map((skill, i) => (
-                <span
-                  key={i}
-                  className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-sm"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300">Önizlemede gördüğünüz dosya indirilir. Şablon değişiklikleri PDF’ye uygulanır.</p>
+        {isGenerating && <div role="status" className="min-h-40 flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900 rounded-sm text-slate-700 dark:text-slate-200"><Loader2 className="w-5 h-5 animate-spin" /> PDF hazırlanıyor…</div>}
+        {pdfError && <div role="alert" className="bg-red-50 dark:bg-red-950/40 p-4 rounded-sm text-sm text-red-800 dark:text-red-200">
+          <p>{pdfError}</p>
+          <button type="button" onClick={() => setRetry((value) => value + 1)} className="mt-3 font-medium underline underline-offset-4">PDF’yi tekrar oluştur</button>
+        </div>}
+        {pdfUrl && <iframe title="CV PDF önizlemesi" src={pdfUrl} className="w-full h-[70vh] min-h-[400px] border border-slate-200 dark:border-slate-700 rounded-sm bg-slate-100" />}
+        {pdfUrl && <p className="text-xs text-slate-600 dark:text-slate-300">Tarayıcınız önizlemeyi göstermiyorsa ayrı sekmede açın veya PDF’yi indirin.</p>}
+      </section>
 
       {/* Action Buttons */}
       <div className="flex gap-3">
         <button
           type="button"
           onClick={handleDownload}
-          disabled={isGenerating}
+          disabled={isGenerating || !pdfUrl}
           className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
