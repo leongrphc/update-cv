@@ -69,6 +69,7 @@ try {
     if (baselinePreview) {
       await page.getByLabel("Ad Soyad *", { exact: true }).fill("Ayşe Öztürk");
       for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await page.getByRole("button", { name: "Tema Özelleştir" }).click();
       await page.screenshot({ path: `.agent/preview-before-${name}.png`, fullPage: true });
     } else if (baseline) {
       await page.screenshot({ path: `.agent/editor-before-${name}.png`, fullPage: true });
@@ -105,6 +106,16 @@ try {
       await page.unroute("**/fonts/open-sans/*");
       await page.getByRole("button", { name: "PDF’yi tekrar oluştur" }).click();
       await expect(page.getByRole("button", { name: "PDF Olarak İndir" })).toBeEnabled({ timeout: 20_000 });
+      await page.getByRole("button", { name: "Tema Özelleştir" }).click();
+      await page.getByRole("button", { name: "Lato", exact: true }).click();
+      await page.getByRole("button", { name: "Varsayılana Sıfırla" }).click();
+      await expect(page.getByRole("button", { name: "Open Sans", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await page.getByRole("button", { name: "Lato", exact: true }).click();
+      await page.getByRole("button", { name: "Yeşil renk teması" }).click();
+      await page.getByRole("slider").focus();
+      await page.keyboard.press("End");
+      await expect(page.getByRole("slider")).toHaveValue("14");
+      await expect(page.getByRole("button", { name: "PDF Olarak İndir" })).toBeEnabled({ timeout: 20_000 });
       await expect(page.getByTitle("CV PDF önizlemesi")).toBeVisible();
       await page.screenshot({ path: `.agent/preview-after-${name}.png`, fullPage: true });
       const downloadPending = page.waitForEvent("download");
@@ -136,13 +147,25 @@ try {
       const newCV = list.createdCVs.items.find((item) => item.id !== id && item.personalInfo.fullName === "Ayşe Öztürk");
       assert.ok(newCV, "Imported PDF must create a new CV");
       assert.equal(newCV.skills.languages[0].level, "");
+      assert.equal(newCV.theme.fontFamily, "Lato");
+      assert.equal(newCV.theme.fontSize, 14);
+      assert.equal(newCV.theme.accentColor, "#059669");
       for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Önceki" }).click();
       await expect(page.locator("pre")).toContainText("Özgün proje açıklaması");
       for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await page.getByRole("button", { name: "Tema Özelleştir" }).click();
+      await expect(page.getByRole("button", { name: "Lato", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByRole("slider")).toHaveValue("14");
       await page.getByRole("button", { name: "Kaydet", exact: true }).click();
       await expect(page.getByText("CV başarıyla kaydedildi!", { exact: true })).toBeVisible();
       const afterResave = await (await context.request.get(`${base}/api/my-cvs`)).json();
       assert.equal(afterResave.createdCVs.total, list.createdCVs.total, "Returning from preview must not create duplicate CVs");
+      await page.evaluate((data) => sessionStorage.setItem("editCreatedCV", JSON.stringify(data)), newCV);
+      await page.goto(`${base}/create-cv?edit=true`);
+      for (let step = 0; step < 4; step++) await page.getByRole("button", { name: "Sonraki" }).click();
+      await page.getByRole("button", { name: "Tema Özelleştir" }).click();
+      await expect(page.getByRole("button", { name: "Lato", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByRole("slider")).toHaveValue("14");
       assert.deepEqual(errors, []);
     }
     await context.close();

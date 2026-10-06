@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { Download, Loader2, Save, Paintbrush, ExternalLink } from "lucide-react";
-import { CreateCVFormData, PDFTemplateId, type CVTemplateTheme, DEFAULT_THEME } from "@/types";
+import { CreateCVFormData, PDFTemplateId, type CVTemplateTheme } from "@/types";
+import { defaultTemplateTheme } from "@/lib/cv-theme";
 import CVTemplateModern from "./CVTemplateModern";
 import CVTemplateClassic from "./CVTemplateClassic";
 import CVTemplateCreative from "./CVTemplateCreative";
@@ -18,6 +19,7 @@ interface PreviewStepProps {
   templateId: PDFTemplateId;
   onTemplateChange: (id: PDFTemplateId) => void;
   onSaved: (id: string) => void;
+  onThemeChange: (theme: CVTemplateTheme) => void;
 }
 
 const templates: { id: PDFTemplateId; name: string; description: string }[] = [
@@ -53,7 +55,7 @@ const templates: { id: PDFTemplateId; name: string; description: string }[] = [
   },
 ];
 
-function getTemplateComponent(data: CreateCVFormData, theme?: CVTemplateTheme) {
+function getTemplateComponent(data: CreateCVFormData) {
   switch (data.templateId) {
     case "classic":
       return <CVTemplateClassic data={data} />;
@@ -66,7 +68,7 @@ function getTemplateComponent(data: CreateCVFormData, theme?: CVTemplateTheme) {
     case "diamond":
       return <CVTemplateDiamond data={data} />;
     default:
-      return <CVTemplateModern data={data} theme={theme} />;
+      return <CVTemplateModern data={data} />;
   }
 }
 
@@ -86,18 +88,19 @@ export default function PreviewStep({
   templateId,
   onTemplateChange,
   onSaved,
+  onThemeChange,
 }: PreviewStepProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | undefined>(formData.id);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [theme, setTheme] = useState<CVTemplateTheme>(DEFAULT_THEME);
+  const theme = formData.theme || defaultTemplateTheme(templateId);
   const [showThemeEditor, setShowThemeEditor] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const previewData = JSON.stringify({ ...formData, id: undefined, title: undefined });
-  const doc = useMemo(() => getTemplateComponent(JSON.parse(previewData), theme), [previewData, theme]);
+  const doc = useMemo(() => getTemplateComponent(JSON.parse(previewData)), [previewData]);
 
   useEffect(() => {
     let active = true;
@@ -194,7 +197,7 @@ export default function PreviewStep({
       </div>
 
       {/* Theme Editor */}
-      {templateId === "modern" && (
+      {(
         <div>
           <button
             type="button"
@@ -207,7 +210,7 @@ export default function PreviewStep({
           </button>
           {showThemeEditor && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
-              <TemplateThemeEditor theme={theme} onChange={setTheme} />
+              <TemplateThemeEditor theme={theme} defaultTheme={defaultTemplateTheme(templateId)} onChange={onThemeChange} />
             </div>
           )}
         </div>

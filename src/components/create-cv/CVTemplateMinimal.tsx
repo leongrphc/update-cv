@@ -12,6 +12,7 @@ import { CreateCVFormData } from "@/types";
 import { getLabels, formatDateL } from "./cv-labels";
 
 import "./pdf-fonts";
+import { applyPDFTheme } from "./pdf-theme";
 
 const colors = {
   black: "#000000",
@@ -20,7 +21,7 @@ const colors = {
   hairline: "#dddddd",
 };
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   page: {
     padding: 52,
     fontFamily: "Open Sans",
@@ -176,6 +177,7 @@ const styles = StyleSheet.create({
 export default function CVTemplateMinimal({ data }: { data: CreateCVFormData }) {
   const { personalInfo, experiences, educations, skills } = data;
   const L = getLabels(data.cvLang);
+  const styles = applyPDFTheme(baseStyles, colors, data.theme);
 
   const contactParts: Array<{ type: "text" | "link"; value: string; label?: string }> = [
     { type: "text" as const, value: personalInfo.email },

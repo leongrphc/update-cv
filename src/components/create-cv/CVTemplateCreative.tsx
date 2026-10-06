@@ -12,6 +12,7 @@ import { CreateCVFormData } from "@/types";
 import { getLabels, formatDateL } from "./cv-labels";
 
 import "./pdf-fonts";
+import { applyPDFTheme } from "./pdf-theme";
 
 const colors = {
   sidebar: "#1e293b",
@@ -24,7 +25,7 @@ const colors = {
   border: "#e5e7eb",
 };
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   page: {
     fontFamily: "Open Sans",
     fontSize: 10,
@@ -183,6 +184,7 @@ const styles = StyleSheet.create({
 export default function CVTemplateCreative({ data }: { data: CreateCVFormData }) {
   const { personalInfo, experiences, educations, skills } = data;
   const L = getLabels(data.cvLang);
+  const styles = applyPDFTheme(baseStyles, colors, data.theme);
 
   return (
     <Document>

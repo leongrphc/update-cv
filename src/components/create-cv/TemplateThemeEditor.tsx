@@ -1,6 +1,6 @@
 "use client";
 
-import { type CVTemplateTheme, DEFAULT_THEME } from "@/types";
+import { type CVTemplateTheme } from "@/types";
 
 const PRESET_COLORS = [
   { name: "Mavi", primary: "#1a1a1a", accent: "#2563eb" },
@@ -15,20 +15,21 @@ const PRESET_COLORS = [
 
 const FONT_OPTIONS: { id: CVTemplateTheme["fontFamily"]; label: string }[] = [
   { id: "Open Sans", label: "Open Sans" },
-  { id: "Helvetica", label: "Helvetica" },
-  { id: "Times-Roman", label: "Times Roman" },
-  { id: "Courier", label: "Courier" },
+  { id: "Lato", label: "Lato" },
+  { id: "PT Serif", label: "PT Serif" },
 ];
 
 interface TemplateThemeEditorProps {
   theme: CVTemplateTheme;
+  defaultTheme: CVTemplateTheme;
   onChange: (theme: CVTemplateTheme) => void;
 }
 
-export default function TemplateThemeEditor({ theme, onChange }: TemplateThemeEditorProps) {
+export default function TemplateThemeEditor({ theme, defaultTheme, onChange }: TemplateThemeEditorProps) {
   const isDefault =
-    theme.accentColor === DEFAULT_THEME.accentColor &&
-    theme.primaryColor === DEFAULT_THEME.primaryColor;
+    theme.accentColor === defaultTheme.accentColor &&
+    theme.primaryColor === defaultTheme.primaryColor &&
+    theme.fontFamily === defaultTheme.fontFamily && theme.fontSize === defaultTheme.fontSize;
 
   return (
     <div className="space-y-4">
@@ -41,6 +42,9 @@ export default function TemplateThemeEditor({ theme, onChange }: TemplateThemeEd
           {PRESET_COLORS.map((preset) => (
             <button
               key={preset.name}
+              type="button"
+              aria-label={`${preset.name} renk teması`}
+              aria-pressed={theme.accentColor === preset.accent}
               onClick={() =>
                 onChange({ ...theme, primaryColor: preset.primary, accentColor: preset.accent })
               }
@@ -64,6 +68,7 @@ export default function TemplateThemeEditor({ theme, onChange }: TemplateThemeEd
           >
             <input
               type="color"
+              aria-label="Özel vurgu rengi"
               value={theme.accentColor}
               onChange={(e) => onChange({ ...theme, accentColor: e.target.value })}
               className="sr-only"
@@ -86,6 +91,8 @@ export default function TemplateThemeEditor({ theme, onChange }: TemplateThemeEd
           {FONT_OPTIONS.map((font) => (
             <button
               key={font.id}
+              type="button"
+              aria-pressed={theme.fontFamily === font.id}
               onClick={() => onChange({ ...theme, fontFamily: font.id })}
               className={`px-3 py-2 text-xs rounded-lg border transition-all ${
                 theme.fontFamily === font.id
@@ -101,11 +108,12 @@ export default function TemplateThemeEditor({ theme, onChange }: TemplateThemeEd
 
       {/* Font Size */}
       <div>
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+        <label htmlFor="cv-font-size" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
           Font Boyutu: {theme.fontSize}pt
         </label>
         <input
           type="range"
+          id="cv-font-size"
           min={8}
           max={14}
           step={0.5}
@@ -122,7 +130,8 @@ export default function TemplateThemeEditor({ theme, onChange }: TemplateThemeEd
       {/* Reset */}
       {!isDefault && (
         <button
-          onClick={() => onChange(DEFAULT_THEME)}
+          type="button"
+          onClick={() => onChange(defaultTheme)}
           className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
         >
           ↩ Varsayılana Sıfırla

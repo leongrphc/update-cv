@@ -66,6 +66,18 @@ describe("CV persistence", () => {
     expect(mocks.create.mock.calls[0][0].data.cvLang).toBe("en");
   });
 
+  it("persists font, size and both theme colors on edits", async () => {
+    const theme = { primaryColor: "#123456", accentColor: "#059669", fontFamily: "Lato", fontSize: 12.5 };
+    expect((await POST(request({ ...cv, id: "existing", theme }))).status).toBe(200);
+    expect(JSON.parse(mocks.update.mock.calls[0][0].data.theme)).toEqual(theme);
+  });
+  it.each([{ primaryColor: "url(javascript:test)", accentColor: "#059669", fontFamily: "Lato", fontSize: 10 },
+    { primaryColor: "#123456", accentColor: "#059669", fontFamily: "unknown", fontSize: 10 },
+    { primaryColor: "#123456", accentColor: "#059669", fontFamily: "Lato", fontSize: 100 }])("rejects invalid export themes", async (theme) => {
+    expect((await POST(request({ ...cv, theme }))).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
   it("updates the owner's existing CV without creating a duplicate", async () => {
     const response = await POST(request({ ...cv, id: "existing-cv", cvLang: "en" }));
     expect((await response.json()).id).toBe("existing-cv");

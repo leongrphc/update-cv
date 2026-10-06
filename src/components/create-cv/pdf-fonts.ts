@@ -11,6 +11,16 @@ Font.register({ family: "Open Sans", fonts: [
   { src: `${base}/open-sans-700.ttf`, fontWeight: 700 },
 ] });
 Font.registerHyphenationCallback((word) => [word]);
+const fontRoot = typeof window === "undefined" ? `${process.cwd()}/public/fonts` : "/fonts";
+Font.register({ family: "Lato", fonts: [
+  { src: `${fontRoot}/lato/Lato-Regular.ttf`, fontWeight: 400 },
+  { src: `${fontRoot}/lato/Lato-SemiBold.ttf`, fontWeight: 600 },
+  { src: `${fontRoot}/lato/Lato-Bold.ttf`, fontWeight: 700 },
+] });
+Font.register({ family: "PT Serif", fonts: [
+  { src: `${fontRoot}/ptserif/PT_Serif-Web-Regular.ttf`, fontWeight: 400 },
+  { src: `${fontRoot}/ptserif/PT_Serif-Web-Bold.ttf`, fontWeight: 700 },
+] });
 
 export function reloadPDFFonts() {
   // A failed font request is cached by React PDF. Re-register definitions for a real retry.

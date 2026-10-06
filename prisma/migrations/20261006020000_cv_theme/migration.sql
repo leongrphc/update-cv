@@ -1,0 +1,1 @@
+ALTER TABLE "CreatedCV" ADD COLUMN "theme" TEXT;

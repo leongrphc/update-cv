@@ -16,7 +16,7 @@ export type EnhanceType = 'metrics' | 'summary' | 'keywords';
 export interface CVTemplateTheme {
   primaryColor: string;
   accentColor: string;
-  fontFamily: 'Open Sans' | 'Helvetica' | 'Times-Roman' | 'Courier';
+  fontFamily: 'Open Sans' | 'Lato' | 'PT Serif';
   fontSize: number;
 }
 
@@ -453,6 +453,7 @@ export interface CreateCVFormData {
   templateId: "modern" | "classic" | "creative" | "executive" | "minimal" | "diamond";
   title?: string;
   cvLang?: "tr" | "en";
+  theme?: CVTemplateTheme;
 }
 
 export interface EnhanceCVContentRequest {

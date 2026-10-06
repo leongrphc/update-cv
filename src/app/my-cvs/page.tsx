@@ -34,6 +34,7 @@ interface CVItem {
 }
 
 interface CreatedCVItem {
+  theme?: import("@/types").CVTemplateTheme;
   id: string;
   title: string;
   fullName: string;
@@ -146,6 +147,7 @@ export default function MyCVsPage() {
       skills: cv.skills,
       templateId: cv.templateId,
       cvLang: cv.cvLang,
+        theme: cv.theme,
       title: cv.title,
       id: cv.id,
     }));
@@ -363,6 +365,7 @@ export default function MyCVsPage() {
                         skills: cv.skills,
                         templateId: cv.templateId,
                         cvLang: cv.cvLang,
+        theme: cv.theme,
                         id: cv.id,
                         title: cv.title,
                       }));

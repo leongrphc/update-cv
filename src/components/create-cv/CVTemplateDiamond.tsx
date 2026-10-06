@@ -12,6 +12,7 @@ import { CreateCVFormData } from "@/types";
 import { getLabels, formatDateL } from "./cv-labels";
 
 import "./pdf-fonts";
+import { applyPDFTheme } from "./pdf-theme";
 
 const colors = {
   sidebarBg: "#064e3b",
@@ -31,7 +32,7 @@ const colors = {
   bulletAccent: "#064e3b",
 };
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   page: {
     fontFamily: "Open Sans",
     fontSize: 10,
@@ -196,6 +197,7 @@ const styles = StyleSheet.create({
 export default function CVTemplateDiamond({ data }: { data: CreateCVFormData }) {
   const { personalInfo, experiences, educations, skills } = data;
   const L = getLabels(data.cvLang);
+  const styles = applyPDFTheme(baseStyles, colors, data.theme);
 
   return (
     <Document>

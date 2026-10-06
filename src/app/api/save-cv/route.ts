@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { cvThemeSchema } from "@/lib/cv-theme";
 
 const schema = z.object({
   id: z.string().min(1).optional(),
   cvLang: z.enum(["tr", "en"]).default("tr"),
+  theme: cvThemeSchema.optional(),
   personalInfo: z.object({
     fullName: z.string().trim().min(1, "Ad gerekli").max(200),
     title: z.string().optional(),
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { id, cvLang, personalInfo, experiences, educations, skills, templateId, title } = v.data;
+    const { id, cvLang, theme, personalInfo, experiences, educations, skills, templateId, title } = v.data;
 
     const data = {
       personalInfo: JSON.stringify(personalInfo),
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
       skills: JSON.stringify(skills),
       templateId,
       cvLang,
+      ...(theme ? { theme: JSON.stringify(theme) } : {}),
       title: title || `${personalInfo.fullName} - CV`,
     };
     let savedId = id;

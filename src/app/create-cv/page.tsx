@@ -20,6 +20,7 @@ import {
   CVEducationEntry,
   CVSkillsData,
   LinkedInProfile,
+  CVTemplateTheme,
 } from "@/types";
 
 const initialPersonalInfo: CVPersonalInfo = {
@@ -143,6 +144,7 @@ function CreateCVContent() {
     "modern" | "classic" | "creative" | "executive" | "minimal" | "diamond"
   >("modern");
   const [cvLang, setCvLang] = useState<"tr" | "en">("tr");
+  const [theme, setTheme] = useState<CVTemplateTheme>();
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [beforeImport, setBeforeImport] = useState<CreateCVFormData | null>(null);
 
@@ -167,6 +169,7 @@ function CreateCVContent() {
           setSkills(data.skills || initialSkills);
           setTemplateId(data.templateId || "modern");
           setCvLang(data.cvLang || "tr");
+          setTheme(data.theme);
           sessionStorage.removeItem("editCreatedCV");
         } catch {
           // ignore
@@ -185,6 +188,7 @@ function CreateCVContent() {
           setSkills(data.skills || initialSkills);
           setTemplateId(data.templateId || "modern");
           setCvLang(data.cvLang || "tr");
+          setTheme(data.theme);
           setCurrentStep(4); // Jump to preview/download step
           sessionStorage.removeItem("downloadCreatedCV");
         } catch {
@@ -203,6 +207,7 @@ function CreateCVContent() {
     skills,
     templateId,
     cvLang,
+    theme,
   };
 
   const canProceed = () => {
@@ -278,6 +283,7 @@ function CreateCVContent() {
     setSkills(cv.skills);
     setTemplateId(cv.templateId);
     setCvLang(cv.cvLang || "tr");
+    setTheme(cv.theme);
   };
 
   return (
@@ -509,6 +515,7 @@ function CreateCVContent() {
             templateId={templateId}
             onTemplateChange={setTemplateId}
             onSaved={setCvId}
+            onThemeChange={setTheme}
           />
         )}
       </div>

@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
         professionalTitle: personalInfo.title,
         templateId: cv.templateId,
         cvLang: cv.cvLang,
+        theme: cv.theme ? JSON.parse(cv.theme) : undefined,
         experienceCount: experiences.length,
         educationCount: educations.length,
         skillCount: skills.technical?.length || 0,

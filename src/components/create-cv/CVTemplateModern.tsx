@@ -13,6 +13,7 @@ import { getLabels, formatDateL } from "./cv-labels";
 
 // Register Open Sans font with Turkish character support
 import "./pdf-fonts";
+import { applyPDFTheme } from "./pdf-theme";
 
 const colors = {
   primary: "#1a1a1a",
@@ -24,7 +25,7 @@ const colors = {
   sectionBg: "#f8fafc",
 };
 
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   page: {
     padding: 35,
     fontFamily: "Open Sans",
@@ -186,7 +187,8 @@ interface CVTemplateModernProps {
 export default function CVTemplateModern({ data, theme: customTheme }: CVTemplateModernProps) {
   const { personalInfo, experiences, educations, skills } = data;
   const L = getLabels(data.cvLang);
-  const tm = customTheme || DEFAULT_THEME;
+  const tm = customTheme || data.theme || DEFAULT_THEME;
+  const styles = applyPDFTheme(baseStyles, colors, customTheme || data.theme);
 
   const dynColors = {
     ...colors,

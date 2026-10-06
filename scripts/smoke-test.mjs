@@ -54,6 +54,7 @@ try {
     skills: { technical: ["TypeScript"], soft: ["Communication"], languages: [{ id: "lang", language: "English", level: "C1" }],
       certifications: [{ id: "cert", name: "Certificate", issuer: "Example", date: "2024" }] },
     templateId: "modern", cvLang: "en",
+    theme: { primaryColor: "#123456", accentColor: "#059669", fontFamily: "PT Serif", fontSize: 12.5 },
   };
   let response = await post("/api/save-cv", cv, cookie);
   assert.equal(response.status, 200);
@@ -65,7 +66,7 @@ try {
   };
   let saved = await list();
   assert.equal(saved.total, 1);
-  for (const key of ["personalInfo", "experiences", "educations", "skills", "cvLang"]) assert.deepEqual(saved.items[0][key], cv[key]);
+  for (const key of ["personalInfo", "experiences", "educations", "skills", "cvLang", "theme"]) assert.deepEqual(saved.items[0][key], cv[key]);
   cv.personalInfo.summary = "Updated summary";
   response = await post("/api/save-cv", { ...cv, id }, cookie);
   assert.equal(response.status, 200);
