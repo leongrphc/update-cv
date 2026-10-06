@@ -11,6 +11,7 @@ import CVTemplateCreative from "./CVTemplateCreative";
 import CVTemplateExecutive from "./CVTemplateExecutive";
 import CVTemplateMinimal from "./CVTemplateMinimal";
 import CVTemplateDiamond from "./CVTemplateDiamond";
+import PDFCanvasPreview from "./PDFCanvasPreview";
 import TemplateThemeEditor from "./TemplateThemeEditor";
 import { reloadPDFFonts } from "./pdf-fonts";
 
@@ -229,8 +230,8 @@ export default function PreviewStep({
           <p>{pdfError}</p>
           <button type="button" onClick={() => setRetry((value) => value + 1)} className="mt-3 font-medium underline underline-offset-4">PDF’yi tekrar oluştur</button>
         </div>}
-        {pdfUrl && <iframe title="CV PDF önizlemesi" src={pdfUrl} className="w-full h-[70vh] min-h-[400px] border border-slate-200 dark:border-slate-700 rounded-sm bg-slate-100" />}
-        {pdfUrl && <p className="text-xs text-slate-600 dark:text-slate-300">Tarayıcınız önizlemeyi göstermiyorsa ayrı sekmede açın veya PDF’yi indirin.</p>}
+        {pdfUrl && <PDFCanvasPreview url={pdfUrl} />}
+
       </section>
 
       {/* Action Buttons */}

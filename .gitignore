@@ -24,3 +24,6 @@ next-env.d.ts
 CLAUDE.md
 *.pdf
 prisma/*.db*
+
+# Generated from the installed PDF.js package at dev/build time
+public/pdfjs/

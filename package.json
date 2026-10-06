@@ -2,7 +2,9 @@
   "name": "cv-optimizer",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": ">=22.3.0" },
+  "engines": {
+    "node": ">=22.3.0"
+  },
   "scripts": {
     "dev": "next dev",
     "setup": "node scripts/setup-local.mjs && npm run db:setup",
@@ -18,7 +20,9 @@
     "db:generate": "prisma generate",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "predev": "node scripts/copy-pdf-worker.mjs",
+    "prebuild": "node scripts/copy-pdf-worker.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.130",
@@ -33,6 +37,7 @@
     "next": "^15.5.27",
     "nodemailer": "^10.0.15",
     "pdf-parse": "^2.4.5",
+    "pdfjs-dist": "5.4.296",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-dropzone": "^14.2.3",

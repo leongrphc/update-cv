@@ -170,7 +170,13 @@ try {
       await page.getByRole("button", { name: "Sonraki" }).click();
       await expect(page.getByRole("region", { name: "PDF önizlemesi" }).getByRole("alert")).toContainText("PDF oluşturulamadı", { timeout: 20_000 });
       await page.unroute("**/fonts/open-sans/*");
+      await page.route("**/pdfjs/pdf.worker-*.min.mjs", route => route.fulfill({ status: 503, body: "Temporary worker failure" }));
       await page.getByRole("button", { name: "PDF’yi tekrar oluştur" }).click();
+      await expect(page.getByRole("alert").filter({ hasText: "PDF önizlemesi açılamadı" })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByRole("button", { name: "PDF Olarak İndir", exact: true })).toBeEnabled();
+      await page.unroute("**/pdfjs/pdf.worker-*.min.mjs");
+      await page.getByRole("button", { name: "Önizlemeyi tekrar aç", exact: true }).click();
+      await expect(page.getByRole("img", { name: "CV PDF önizlemesi, sayfa 1", exact: true })).toHaveCSS("opacity", "1", { timeout: 20_000 });
       await expect(page.getByRole("button", { name: "PDF Olarak İndir" })).toBeEnabled({ timeout: 20_000 });
       await page.getByRole("button", { name: "Tema Özelleştir" }).click();
       await page.getByRole("button", { name: "Lato", exact: true }).click();
@@ -182,7 +188,14 @@ try {
       await page.keyboard.press("End");
       await expect(page.getByRole("slider")).toHaveValue("14");
       await expect(page.getByRole("button", { name: "PDF Olarak İndir" })).toBeEnabled({ timeout: 20_000 });
-      await expect(page.getByTitle("CV PDF önizlemesi")).toBeVisible();
+      await expect(page.getByRole("img", { name: "CV PDF önizlemesi, sayfa 1", exact: true })).toHaveCSS("opacity", "1", { timeout: 20_000 });
+      assert.ok(await page.getByRole("img", { name: "CV PDF önizlemesi, sayfa 1", exact: true }).evaluate(canvas => {
+        const pixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+        let visible = 0;
+        for (let index = 0; index < pixels.length; index += 32) if (pixels[index + 3] && (pixels[index] < 240 || pixels[index + 1] < 240 || pixels[index + 2] < 240)) visible++;
+        return visible;
+      }) > 20, "PDF preview must contain rendered text on desktop and mobile");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "PDF canvas must fit mobile");
       await page.screenshot({ path: `.agent/preview-after-${name}.png`, fullPage: true });
       const downloadPending = page.waitForEvent("download");
       await page.getByRole("button", { name: "PDF Olarak İndir" }).click();
@@ -190,8 +203,8 @@ try {
       const target = `.agent/imported-${name}.pdf`;
       await download.saveAs(target);
       const downloadedPDF = readFileSync(target);
-      const previewBytes = await page.getByTitle("CV PDF önizlemesi").evaluate(async (frame) => {
-        const response = await fetch(frame.src);
+      const previewBytes = await page.locator("[data-pdf-url]").evaluate(async (preview) => {
+        const response = await fetch(preview.dataset.pdfUrl);
         return Array.from(new Uint8Array(await response.arrayBuffer()));
       });
       assert.deepEqual(downloadedPDF, Buffer.from(previewBytes), "Download must match the displayed PDF");
@@ -239,6 +252,26 @@ try {
       await page.getByRole("button", { name: "Tema Özelleştir" }).click();
       await expect(page.getByRole("button", { name: "Lato", exact: true })).toHaveAttribute("aria-pressed", "true");
       await expect(page.getByRole("slider")).toHaveValue("14");
+      const longCV = { ...cv, experiences: [{ ...cv.experiences[0], bullets: Array.from({ length: 80 }, (_, index) => `Kayıt ${index}: İş süreçlerini ölçtüm ve TypeScript ile geliştirdim.`) }] };
+      const longSave = await context.request.post(`${base}/api/save-cv`, { data: longCV });
+      assert.equal(longSave.status(), 200);
+      const longID = (await longSave.json()).id;
+      await page.goto(`${base}/create-cv?id=${longID}&download=true`);
+      const firstCanvas = page.getByRole("img", { name: "CV PDF önizlemesi, sayfa 1", exact: true });
+      await expect(firstCanvas).toHaveCSS("opacity", "1", { timeout: 20_000 });
+      await expect(page.getByRole("button", { name: "Sonraki PDF sayfası", exact: true })).toBeEnabled();
+      await page.getByRole("button", { name: "Sonraki PDF sayfası", exact: true }).click();
+      await expect(page.getByRole("img", { name: "CV PDF önizlemesi, sayfa 2", exact: true })).toHaveCSS("opacity", "1", { timeout: 20_000 });
+      await page.getByRole("button", { name: "PDF görünümünü büyüt", exact: true }).click();
+      await expect(page.getByRole("button", { name: "125%", exact: true })).toBeVisible();
+      await expect(page.getByRole("img", { name: "CV PDF önizlemesi, sayfa 2", exact: true })).toHaveCSS("opacity", "1");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Zoom must scroll within the preview");
+      await page.getByRole("button", { name: "125%", exact: true }).click();
+      await expect(page.getByRole("img", { name: "CV PDF önizlemesi, sayfa 2", exact: true })).toHaveCSS("opacity", "1");
+      await page.getByText("Bu PDF sayfasındaki metni göster", { exact: true }).click();
+      await expect(page.locator("[data-pdf-url] details")).toContainText("Kayıt");
+      await page.getByRole("button", { name: "Önceki PDF sayfası", exact: true }).click();
+      await expect(firstCanvas).toHaveCSS("opacity", "1");
       const other = await context.request.post(`${base}/api/auth/register`, { data: {
         name: "Other Editor", email: `other-${name}@example.com`, password: "EditorPassword123",
       } });

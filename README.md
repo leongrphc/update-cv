@@ -19,7 +19,7 @@ PDF olarak CV'ni yükleyip, başvurmak istediğin iş ilanını yapıştırıyor
 
 AI'dan mevcut bilgileri koruması istenir; otomatik çıkarım ve öneriler hata içerebilir. Tarihleri, iletişim bilgilerini ve başarıları kaynak CV ile karşılaştırın.
 
-PDF düzenleme için **CV Oluştur → PDF CV yükle → Kontrol ettim, alanlara aktar** akışını kullanın. İçe aktarma mevcut formu otomatik değiştirmez, geri alınabilir ve eski CV kaydının üzerine yazmaz. Son adımda gerçek PDF görüntülenir; indirilen dosya önizlemeyle aynıdır.
+PDF düzenleme için **CV Oluştur → PDF CV yükle → Kontrol ettim, alanlara aktar** akışını kullanın. İçe aktarma mevcut formu otomatik değiştirmez, geri alınabilir ve eski CV kaydının üzerine yazmaz. Son adımda gerçek PDF uygulama içinde çizilir; masaüstü ve mobilde sayfalar arasında geçebilir, yakınlaştırabilir ve sayfa metnini görüntüleyebilirsiniz. İndirilen dosya önizlemeyle aynıdır.
 
 Seçilebilir metin içeren, en fazla 5 MB PDF desteklenir. AI anahtarı varsa metin sağlayıcıya gönderilerek alanlara ayrılır. Anahtar yoksa PDF metni değiştirilmeden **Kaynak CV** adlı özel bölüme aktarılır; kişisel bilgilerinizi doldurup metni kendiniz düzenleyebilir ve bölümlere ayırabilirsiniz. Proje/yayın/referans gibi bölümler tüm şablonlarda PDF’ye dahil edilir. Taranmış belgelerde önce OCR gerekir; orijinal tasarım yerine seçtiğiniz şablon uygulanır.
 
@@ -31,7 +31,7 @@ AI ile özet, deneyim maddesi veya özel bölüm için öneri isteyebilirsiniz. 
 
 ## Çalıştırmak için
 
-Node.js 22.3 veya üzeri gerekir; CI Node.js 24 kullanır.
+Node.js 22.3 veya üzeri gerekir; CI Node.js 24 kullanır. `npm run dev` ve `npm run build`, PDF.js görüntüleme motorunun aynı sürümdeki worker dosyasını ve Apache lisansını `public/pdfjs` içine otomatik kopyalar. Bu dosyalar CDN gerektirmez.
 
 ```
 npm ci
