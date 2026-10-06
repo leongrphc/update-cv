@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
 
-const mocks = vi.hoisted(() => ({ session: vi.fn(), create: vi.fn() }));
+const mocks = vi.hoisted(() => ({ session: vi.fn(), create: vi.fn(), update: vi.fn() }));
 vi.mock("@/lib/auth", () => ({ getSession: mocks.session }));
-vi.mock("@/lib/prisma", () => ({ prisma: { createdCV: { create: mocks.create } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { createdCV: { create: mocks.create, updateMany: mocks.update } } }));
 
 const cv = {
   personalInfo: {
@@ -32,6 +32,7 @@ describe("CV persistence", () => {
     vi.clearAllMocks();
     mocks.session.mockResolvedValue({ id: "owner" });
     mocks.create.mockResolvedValue({ id: "saved-cv" });
+    mocks.update.mockResolvedValue({ count: 1 });
   });
 
   it("preserves every personal, experience, education, language and certification field", async () => {
@@ -57,6 +58,26 @@ describe("CV persistence", () => {
   it("prevents unauthenticated saves", async () => {
     mocks.session.mockResolvedValue(null);
     expect((await POST(request(cv))).status).toBe(401);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it("preserves the selected CV language", async () => {
+    expect((await POST(request({ ...cv, cvLang: "en" }))).status).toBe(200);
+    expect(mocks.create.mock.calls[0][0].data.cvLang).toBe("en");
+  });
+
+  it("updates the owner's existing CV without creating a duplicate", async () => {
+    const response = await POST(request({ ...cv, id: "existing-cv", cvLang: "en" }));
+    expect((await response.json()).id).toBe("existing-cv");
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: "existing-cv", userId: "owner" }, data: expect.objectContaining({ cvLang: "en" }),
+    }));
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it("cannot edit a CV owned by another user", async () => {
+    mocks.update.mockResolvedValue({ count: 0 });
+    expect((await POST(request({ ...cv, id: "other-cv" }))).status).toBe(404);
     expect(mocks.create).not.toHaveBeenCalled();
   });
 });

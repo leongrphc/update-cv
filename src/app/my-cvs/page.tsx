@@ -39,6 +39,7 @@ interface CreatedCVItem {
   fullName: string;
   professionalTitle: string;
   templateId: string;
+  cvLang: "tr" | "en";
   experienceCount: number;
   educationCount: number;
   skillCount: number;
@@ -144,6 +145,7 @@ export default function MyCVsPage() {
       educations: cv.educations,
       skills: cv.skills,
       templateId: cv.templateId,
+      cvLang: cv.cvLang,
       title: cv.title,
       id: cv.id,
     }));
@@ -360,6 +362,9 @@ export default function MyCVsPage() {
                         educations: cv.educations,
                         skills: cv.skills,
                         templateId: cv.templateId,
+                        cvLang: cv.cvLang,
+                        id: cv.id,
+                        title: cv.title,
                       }));
                       router.push("/create-cv?download=true");
                     }}

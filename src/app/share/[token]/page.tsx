@@ -56,6 +56,7 @@ export default async function ShareCVPage({ params }: Props) {
         experiences={experiences}
         educations={educations}
         skills={skills}
+        cvLang={cv.cvLang === "en" ? "en" : "tr"}
       />
     </div>
   );

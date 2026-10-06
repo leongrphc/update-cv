@@ -29,6 +29,7 @@ try {
         const cv = await db.createdCV.findUniqueOrThrow({ where: { id: "legacy-cv" } });
         assert.equal(cv.isPublic, false);
         assert.equal(cv.shareToken, null);
+        assert.equal(cv.cvLang, "tr");
         await db.createdCV.update({ where: { id: cv.id }, data: { isPublic: true, shareToken: "test-token" } });
         assert.equal((await db.createdCV.findFirst({ where: { shareToken: "test-token", isPublic: true } })).id, cv.id);
       } else {

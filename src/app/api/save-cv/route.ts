@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const schema = z.object({
+  id: z.string().min(1).optional(),
+  cvLang: z.enum(["tr", "en"]).default("tr"),
   personalInfo: z.object({
     fullName: z.string().trim().min(1, "Ad gerekli").max(200),
     title: z.string().optional(),
@@ -72,23 +74,31 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { personalInfo, experiences, educations, skills, templateId, title } = v.data;
+    const { id, cvLang, personalInfo, experiences, educations, skills, templateId, title } = v.data;
 
-    const createdCV = await prisma.createdCV.create({
-      data: {
-        userId: session.id,
-        personalInfo: JSON.stringify(personalInfo),
-        experiences: JSON.stringify(experiences),
-        educations: JSON.stringify(educations),
-        skills: JSON.stringify(skills),
-        templateId,
-        title: title || `${personalInfo.fullName} - CV`,
-      },
-    });
+    const data = {
+      personalInfo: JSON.stringify(personalInfo),
+      experiences: JSON.stringify(experiences),
+      educations: JSON.stringify(educations),
+      skills: JSON.stringify(skills),
+      templateId,
+      cvLang,
+      title: title || `${personalInfo.fullName} - CV`,
+    };
+    let savedId = id;
+    if (id) {
+      const updated = await prisma.createdCV.updateMany({ where: { id, userId: session.id }, data });
+      if (updated.count !== 1) {
+        return NextResponse.json({ success: false, error: "CV bulunamadı" }, { status: 404 });
+      }
+    } else {
+      const createdCV = await prisma.createdCV.create({ data: { ...data, userId: session.id } });
+      savedId = createdCV.id;
+    }
 
     return NextResponse.json({
       success: true,
-      id: createdCV.id,
+      id: savedId,
       message: "CV başarıyla kaydedildi",
     });
   } catch (error) {

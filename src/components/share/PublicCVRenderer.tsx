@@ -1,12 +1,14 @@
 "use client";
 
 import type { CVPersonalInfo, CVExperienceEntry, CVEducationEntry, CVSkillsData } from "@/types";
+import { getLabels, type CVLang } from "@/components/create-cv/cv-labels";
 
 interface PublicCVRendererProps {
   personalInfo: CVPersonalInfo;
   experiences: CVExperienceEntry[];
   educations: CVEducationEntry[];
   skills: CVSkillsData;
+  cvLang?: CVLang;
 }
 
 export function PublicCVRenderer({
@@ -14,9 +16,11 @@ export function PublicCVRenderer({
   experiences,
   educations,
   skills,
+  cvLang = "tr",
 }: PublicCVRendererProps) {
+  const labels = getLabels(cvLang);
   return (
-    <div className="max-w-[210mm] mx-auto bg-white text-gray-900 p-8 shadow-lg print:shadow-none print:p-0">
+    <div lang={cvLang} className="max-w-[210mm] mx-auto bg-white text-gray-900 p-8 shadow-lg print:shadow-none print:p-0">
       {/* Header */}
       <header className="border-b-2 border-gray-900 pb-4 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">{personalInfo.fullName}</h1>
@@ -37,7 +41,7 @@ export function PublicCVRenderer({
       {personalInfo.summary && (
         <section className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-2">
-            Profesyonel Özet
+            {labels.summary}
           </h2>
           <p className="text-sm leading-relaxed text-gray-700">{personalInfo.summary}</p>
         </section>
@@ -47,7 +51,7 @@ export function PublicCVRenderer({
       {experiences.length > 0 && (
         <section className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-3">
-            İş Deneyimi
+            {labels.experience}
           </h2>
           <div className="space-y-4">
             {experiences.map((exp) => (
@@ -62,7 +66,7 @@ export function PublicCVRenderer({
                   </div>
                   <span className="text-xs text-gray-400 whitespace-nowrap">
                     {exp.startDate}
-                    {exp.current ? " — Devam" : exp.endDate ? ` — ${exp.endDate}` : ""}
+                    {exp.current ? ` — ${labels.presentShort}` : exp.endDate ? ` — ${exp.endDate}` : ""}
                   </span>
                 </div>
                 {exp.bullets.filter(Boolean).length > 0 && (
@@ -84,7 +88,7 @@ export function PublicCVRenderer({
       {educations.length > 0 && (
         <section className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-3">
-            Eğitim
+            {labels.education}
           </h2>
           <div className="space-y-3">
             {educations.map((edu) => (
@@ -116,17 +120,17 @@ export function PublicCVRenderer({
       {(skills.technical.length > 0 || skills.soft.length > 0) && (
         <section className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-3">
-            Beceriler
+            {labels.skillsAll}
           </h2>
           {skills.technical.length > 0 && (
             <div className="mb-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase">Teknik: </span>
+              <span className="text-xs font-semibold text-gray-500 uppercase">{labels.technicalSkills}: </span>
               <span className="text-sm text-gray-700">{skills.technical.join(", ")}</span>
             </div>
           )}
           {skills.soft.length > 0 && (
             <div>
-              <span className="text-xs font-semibold text-gray-500 uppercase">Soft: </span>
+              <span className="text-xs font-semibold text-gray-500 uppercase">{labels.softSkills}: </span>
               <span className="text-sm text-gray-700">{skills.soft.join(", ")}</span>
             </div>
           )}
@@ -134,10 +138,10 @@ export function PublicCVRenderer({
       )}
 
       {/* Languages */}
-      {skills.languages.length > 0 && (
+      {skills.languages?.length > 0 && (
         <section className="mb-6">
           <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-3">
-            Diller
+            {labels.languages}
           </h2>
           <div className="flex flex-wrap gap-3">
             {skills.languages.map((lang) => (
@@ -150,10 +154,10 @@ export function PublicCVRenderer({
       )}
 
       {/* Certifications */}
-      {skills.certifications.length > 0 && (
+      {skills.certifications?.length > 0 && (
         <section>
           <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-3">
-            Sertifikalar
+            {labels.certifications}
           </h2>
           <div className="space-y-1">
             {skills.certifications.map((cert) => (

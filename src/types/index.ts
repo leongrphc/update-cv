@@ -445,6 +445,7 @@ export interface CVSkillsData {
 }
 
 export interface CreateCVFormData {
+  id?: string;
   personalInfo: CVPersonalInfo;
   experiences: CVExperienceEntry[];
   educations: CVEducationEntry[];

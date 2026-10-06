@@ -197,6 +197,7 @@ model CreatedCV {
   educations    String
   skills        String
   templateId    String   @default("modern")
+  cvLang        String   @default("tr")
   title         String?
   shareToken    String?  @unique
   isPublic      Boolean  @default(false)

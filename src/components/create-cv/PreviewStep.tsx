@@ -75,6 +75,7 @@ export default function PreviewStep({
 }: PreviewStepProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedId, setSavedId] = useState<string | undefined>(formData.id);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [theme, setTheme] = useState<CVTemplateTheme>(DEFAULT_THEME);
   const [showThemeEditor, setShowThemeEditor] = useState(false);
@@ -110,10 +111,11 @@ export default function PreviewStep({
       const res = await fetch("/api/save-cv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, id: savedId || formData.id }),
       });
       const data = await res.json();
       if (data.success) {
+        setSavedId(data.id);
         setSaveMessage("CV başarıyla kaydedildi!");
       } else {
         setSaveMessage(data.error || "Kaydetme başarısız. Giriş yapmayı deneyin.");

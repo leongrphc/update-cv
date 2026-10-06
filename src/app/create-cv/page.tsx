@@ -131,6 +131,8 @@ function CreateCVContent() {
   const isDownload = searchParams.get("download") === "true";
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [cvId, setCvId] = useState<string>();
+  const [cvTitle, setCvTitle] = useState<string>();
   const [personalInfo, setPersonalInfo] =
     useState<CVPersonalInfo>(initialPersonalInfo);
   const [experiences, setExperiences] = useState<CVExperienceEntry[]>([]);
@@ -155,6 +157,8 @@ function CreateCVContent() {
       if (stored) {
         try {
           const data = JSON.parse(stored);
+          setCvId(data.id);
+          setCvTitle(data.title);
           setPersonalInfo(data.personalInfo);
           setExperiences(data.experiences || []);
           setEducations(data.educations || []);
@@ -171,6 +175,8 @@ function CreateCVContent() {
       if (stored) {
         try {
           const data = JSON.parse(stored);
+          setCvId(data.id);
+          setCvTitle(data.title);
           setPersonalInfo(data.personalInfo);
           setExperiences(data.experiences || []);
           setEducations(data.educations || []);
@@ -187,6 +193,8 @@ function CreateCVContent() {
   }, [isEdit, isDownload]);
 
   const formData: CreateCVFormData = {
+    id: cvId,
+    title: cvTitle,
     personalInfo,
     experiences,
     educations,
