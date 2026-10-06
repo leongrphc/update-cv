@@ -22,7 +22,7 @@ Uygulama yalan bilgi eklemiyor. Sadece mevcut deneyimlerini daha iyi ifade etmen
 
 ```
 npm install
-npm run db:push
+npm run db:setup
 npm run dev
 ```
 
@@ -30,7 +30,7 @@ Tarayıcıda `http://localhost:3000` adresine git.
 
 ## Ayarlar
 
-`.env.local` dosyası oluşturup API anahtarlarını eklemen gerekiyor:
+`.env.example` dosyasını `.env` olarak kopyalayıp API anahtarlarını eklemen gerekiyor. Prisma CLI ve Next.js bu dosyayı okuyabilir:
 
 ```
 GOOGLE_GENERATIVE_AI_API_KEY=...
@@ -40,3 +40,14 @@ OPENAI_API_KEY=...
 DATABASE_URL="file:./dev.db"
 JWT_SECRET=rastgele-bir-sifre
 ```
+
+Yeni kurulumda `npm run db:setup` boş veritabanını migration dosyalarından oluşturur. Veritabanı dosyaları Git'e eklenmez.
+
+Eski `prisma/dev.db` dosyanız varsa önce yedeğini alın. Eski şemayı migration geçmişine kaydedip güncellemeleri uygulayın:
+
+```sh
+npx prisma migrate resolve --applied 20260505000000_baseline
+npm run db:setup
+```
+
+Bu baselining komutu yalnızca migration geçmişi olmayan eski veritabanları içindir. Güncellemeler CV kayıtlarını korur ve paylaşım alanlarını ekler. Boş ve eski veritabanı yollarını `npm run test:migrations` ile doğrulayabilirsiniz.
