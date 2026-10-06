@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 const schema = z.object({
   keywords: z.string().min(1, "Anahtar kelime gerekli").max(200),
@@ -56,6 +57,9 @@ function buildLinkedInSearchUrl(
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await getSession())) {
+      return NextResponse.json({ success: false, error: "Oturum açmanız gerekiyor" }, { status: 401 });
+    }
     const body = await request.json();
     const v = schema.safeParse(body);
     if (!v.success) {

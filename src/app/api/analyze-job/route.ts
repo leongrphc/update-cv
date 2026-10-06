@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeJob } from "@/lib/llm-client";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 const MAX_TEXT = 50_000;
 
@@ -10,6 +11,9 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!(await getSession())) {
+      return NextResponse.json({ success: false, error: "Oturum açmanız gerekiyor" }, { status: 401 });
+    }
     const body = await request.json();
     const v = schema.safeParse(body);
     if (!v.success) {

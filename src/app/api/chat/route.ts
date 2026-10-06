@@ -2,12 +2,13 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText } from "ai";
 import { CAREER_COACH_SYSTEM_PROMPT } from "@/lib/prompts";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 
 const MAX_TEXT = 50_000;
 
 const schema = z.object({
   messages: z.array(z.object({
-    role: z.enum(["user", "assistant", "system"]),
+    role: z.enum(["user", "assistant"]),
     content: z.string().min(1).max(MAX_TEXT),
   })).min(1, "Mesaj gerekli").max(50),
 });
@@ -18,6 +19,9 @@ const google = createGoogleGenerativeAI({
 
 export async function POST(request: Request) {
   try {
+    if (!(await getSession())) {
+      return Response.json({ error: "Oturum açmanız gerekiyor" }, { status: 401 });
+    }
     const body = await request.json();
     const v = schema.safeParse(body);
     if (!v.success) {

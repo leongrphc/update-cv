@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { isRateLimited } from "@/lib/rate-limit";
 
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable is required");
@@ -17,6 +18,9 @@ const protectedRoutes = [
 ];
 
 const protectedApiRoutes = [
+  "/api/chat",
+  "/api/find-jobs",
+  "/api/analyze-job",
   "/api/history",
   "/api/user",
   "/api/optimize",
@@ -36,12 +40,8 @@ const protectedApiRoutes = [
   "/api/share-cv",
 ];
 
-// Rate limiting (in-memory, IP bazlı)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 dakika
-const RATE_LIMIT_MAX = 15; // dakikada max istek
-
 const aiApiPrefixes = [
+  "/api/chat",
   "/api/optimize",
   "/api/cover-letter",
   "/api/skill-gap",
@@ -57,40 +57,25 @@ const aiApiPrefixes = [
   "/api/analyze-job",
 ];
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-    return false;
-  }
-
-  entry.count++;
-  return entry.count > RATE_LIMIT_MAX;
-}
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Rate limiting — AI endpoint'leri
+  // Authentication attempts are limited before password hashing or email delivery.
+  if (pathname.startsWith("/api/auth/")) {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") || "unknown";
+    if (isRateLimited(`auth:${ip}`, 10)) {
+      return NextResponse.json(
+        { success: false, error: "Çok fazla deneme yaptınız. Lütfen biraz bekleyin." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
+    return NextResponse.next();
+  }
+
   const isAiRoute = aiApiPrefixes.some((prefix) =>
     pathname.startsWith(prefix)
   );
-
-  if (isAiRoute) {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "unknown";
-
-    if (isRateLimited(ip)) {
-      return NextResponse.json(
-        { success: false, error: "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin." },
-        { status: 429 }
-      );
-    }
-  }
 
   // Auth kontrolü
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -119,7 +104,14 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ["HS256"] });
+    if (typeof payload.userId !== "string" || !payload.userId) throw new Error("Invalid session");
+    if (isAiRoute && isRateLimited(`ai:${payload.userId}`, 15)) {
+      return NextResponse.json(
+        { success: false, error: "Çok fazla istek gönderdiniz. Lütfen biraz bekleyin." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
     return NextResponse.next();
   } catch {
     const response = isProtectedApi
@@ -136,6 +128,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/chat/:path*",
     "/history/:path*",
     "/profile/:path*",
     "/settings/:path*",

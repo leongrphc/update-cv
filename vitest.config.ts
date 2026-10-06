@@ -5,6 +5,7 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
+    env: { JWT_SECRET: "vitest-only-secret-not-for-production" },
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     globals: true,
