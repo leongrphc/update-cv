@@ -16,8 +16,9 @@ Tamamlanan geliştirmeler:
 | `dc13451` | SMTP şifre sıfırlama e-postaları, hash olarak saklanan token'lar ve tek kullanım kontrolü eklendi. |
 | `d8eea0a` | Mülakat oturumları kullanıcıya bağlandı; başka kullanıcıların oturumunu okuma ve değerlendirme engellendi. |
 | `bdec5cf` | CV düzenleme artık aynı kaydı güncelliyor; CV dili düzenleme, indirme ve paylaşımda korunuyor. |
+| `6280e79` | Güvenli yerel kurulum, GitHub Actions, çalışan uygulama kontrolleri ve uyarısız lint eklendi. |
 
-Ayrıca `npm run setup` ile mevcut ayarları koruyan, rastgele yerel anahtarlar üreten kurulum ve GitHub Actions doğrulama akışı eklendi. Lint uyarıları giderildi. Yerel veritabanının migration öncesi yedeği `prisma/dev.db.before-migrations` dosyasında tutuluyor; Git'e gönderilmiyor.
+Ayrıca `npm run setup` ile mevcut ayarları koruyan, rastgele yerel anahtarlar üreten kurulum ve GitHub Actions doğrulama akışı eklendi. Actions paketleri güncel v7 sürümlerine taşındı ve CI ortamı Ubuntu 24.04 olarak sabitlendi. Lint uyarıları giderildi. Yerel veritabanının migration öncesi yedeği `prisma/dev.db.before-migrations` dosyasında tutuluyor; Git'e gönderilmiyor.
 
 Doğrulama: 12 test dosyasında 71 test geçti. Boş ve mevcut veritabanı migration testleri başarılı. Lint hatasız ve uyarısız. Üretim bağımlılık audit'i 0 uyarı bildiriyor. Üretim derlemesi başarılı; çalışan uygulamada CV kaydetme–yeniden açma–güncelleme–paylaşımı açma/kapatma, dil koruma ve başka kullanıcının CV'sini değiştirememe kontrolleri geçti.
 
