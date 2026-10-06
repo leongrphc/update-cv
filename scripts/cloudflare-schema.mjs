@@ -1,6 +1,17 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
+export function parseWranglerJson(output) {
+  // Remote SQL file imports emit progress lines even with --json.
+  const start = output.search(/^\s*\[/m);
+  if (start < 0) throw new Error("Wrangler did not return a JSON result.");
+  const result = JSON.parse(output.slice(start));
+  if (!Array.isArray(result) || result.some(item => typeof item.success !== "boolean")) {
+    throw new Error("Wrangler returned an unexpected JSON result.");
+  }
+  return result;
+}
+
 // D1's first deployment predates Prisma migration history. Reconcile only the
 // additive statements already reviewed in the repository's migrations.
 export function buildSchemaPlan(objects, cvColumns) {

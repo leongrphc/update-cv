@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildSchemaPlan } from "./cloudflare-schema.mjs";
+import { buildSchemaPlan, parseWranglerJson } from "./cloudflare-schema.mjs";
 
 const remote = process.argv.includes("--remote");
 const apply = process.argv.includes("--apply");
@@ -12,7 +12,7 @@ const run = (...args) => execFileSync(process.execPath, [cli, ...args], {
   encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 10 * 1024 * 1024,
 });
 const query = (sql) => {
-  const response = JSON.parse(run("d1", "execute", database, target, "--command", sql, "--json"));
+  const response = parseWranglerJson(run("d1", "execute", database, target, "--command", sql, "--json"));
   if (response.some(({ success }) => !success)) throw new Error("D1 query failed");
   return response[0].results;
 };
@@ -33,7 +33,7 @@ if (!plan.length || !apply) {
   console.log(`Backup saved: ${backup}`);
   const file = resolve(directory, `migration-${stamp}.sql`);
   writeFileSync(file, plan.join("\n\n"));
-  const result = JSON.parse(run("d1", "execute", database, target, "--file", file, "--json"));
+  const result = parseWranglerJson(run("d1", "execute", database, target, "--file", file, "--json"));
   if (result.some(({ success }) => !success)) throw new Error("D1 migration failed; backup has been retained.");
   if (inspect().length) throw new Error("D1 schema verification failed; inspect before deployment.");
   console.log("D1 schema verified. Existing records were retained.");

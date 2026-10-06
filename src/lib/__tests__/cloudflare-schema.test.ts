@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error Node deployment script is also tested against real SQLite.
-import { buildSchemaPlan } from "../../../scripts/cloudflare-schema.mjs";
+import { buildSchemaPlan, parseWranglerJson } from "../../../scripts/cloudflare-schema.mjs";
 
 function migrate(db: DatabaseSync) {
   const plan = buildSchemaPlan(
@@ -15,6 +15,13 @@ function migrate(db: DatabaseSync) {
 }
 
 describe("additive Cloudflare schema migration", () => {
+  it("accepts remote import progress before the JSON result and rejects missing results", () => {
+    expect(parseWranglerJson('├ Checking if file needs uploading\n├ Import complete\n[\n{"success":true,"results":[]}\n]'))
+      .toEqual([{ success: true, results: [] }]);
+    expect(parseWranglerJson('[{"success":false,"results":[]}]')[0].success).toBe(false);
+    expect(() => parseWranglerJson("Import was interrupted")).toThrow("did not return");
+    expect(() => parseWranglerJson('[{"message":"not a query result"}]')).toThrow("unexpected");
+  });
   it("initializes a fresh D1 schema and is safe to repeat", () => {
     const db = new DatabaseSync(":memory:");
     try {
