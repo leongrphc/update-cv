@@ -13,7 +13,7 @@ function generateId() {
 }
 
 const languageLevels: CVLanguageEntry["level"][] = [
-  "A1", "A2", "B1", "B2", "C1", "C2", "Ana Dil",
+  "", "A1", "A2", "B1", "B2", "C1", "C2", "Ana Dil",
 ];
 
 export default function SkillsStep({ data, onChange }: SkillsStepProps) {
@@ -48,7 +48,7 @@ export default function SkillsStep({ data, onChange }: SkillsStepProps) {
   const addLanguage = () => {
     onChange({
       ...data,
-      languages: [...data.languages, { id: generateId(), language: "", level: "B1" }],
+      languages: [...data.languages, { id: generateId(), language: "", level: "" }],
     });
   };
 
@@ -189,7 +189,7 @@ export default function SkillsStep({ data, onChange }: SkillsStepProps) {
               >
                 {languageLevels.map((level) => (
                   <option key={level} value={level}>
-                    {level}
+                  {level || "Seviye belirtilmedi"}
                   </option>
                 ))}
               </select>

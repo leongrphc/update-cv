@@ -23,27 +23,28 @@ export default function PersonalInfoStep({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label htmlFor="cv-fullName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Ad Soyad *
           </label>
           <input
             type="text"
+            id="cv-fullName"
             value={data.fullName}
-            onChange={(e) => update("fullName", e.target.value)}
             required
+            onChange={(e) => update("fullName", e.target.value)}
             placeholder="örn: Ahmet Yılmaz"
             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Profesyonel Ünvan *
+          <label htmlFor="cv-title" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Profesyonel Ünvan
           </label>
           <input
             type="text"
+            id="cv-title"
             value={data.title}
             onChange={(e) => update("title", e.target.value)}
-            required
             placeholder="örn: Senior Frontend Developer"
             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -52,27 +53,27 @@ export default function PersonalInfoStep({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            E-posta *
+          <label htmlFor="cv-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            E-posta
           </label>
           <input
             type="email"
+            id="cv-email"
             value={data.email}
             onChange={(e) => update("email", e.target.value)}
-            required
             placeholder="ornek@email.com"
             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Telefon *
+          <label htmlFor="cv-phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Telefon
           </label>
           <input
             type="tel"
+            id="cv-phone"
             value={data.phone}
             onChange={(e) => update("phone", e.target.value)}
-            required
             placeholder="+90 5XX XXX XX XX"
             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -81,11 +82,12 @@ export default function PersonalInfoStep({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label htmlFor="cv-location" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Konum
           </label>
           <input
             type="text"
+            id="cv-location"
             value={data.location || ""}
             onChange={(e) => update("location", e.target.value)}
             placeholder="örn: İstanbul, Türkiye"
@@ -93,11 +95,12 @@ export default function PersonalInfoStep({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label htmlFor="cv-linkedinUrl" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             LinkedIn URL
           </label>
           <input
             type="url"
+            id="cv-linkedinUrl"
             value={data.linkedinUrl || ""}
             onChange={(e) => update("linkedinUrl", e.target.value)}
             placeholder="https://linkedin.com/in/..."
@@ -107,11 +110,12 @@ export default function PersonalInfoStep({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+        <label htmlFor="cv-websiteUrl" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
           Web Sitesi
         </label>
         <input
           type="url"
+          id="cv-websiteUrl"
           value={data.websiteUrl || ""}
           onChange={(e) => update("websiteUrl", e.target.value)}
           placeholder="https://..."
@@ -121,7 +125,7 @@ export default function PersonalInfoStep({
 
       <div>
         <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="cv-summary" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             Profesyonel Özet
           </label>
           <button
@@ -144,6 +148,7 @@ export default function PersonalInfoStep({
           </button>
         </div>
         <textarea
+          id="cv-summary"
           value={data.summary || ""}
           onChange={(e) => update("summary", e.target.value)}
           rows={4}

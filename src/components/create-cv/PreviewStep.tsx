@@ -16,6 +16,7 @@ interface PreviewStepProps {
   formData: CreateCVFormData;
   templateId: PDFTemplateId;
   onTemplateChange: (id: PDFTemplateId) => void;
+  onSaved: (id: string) => void;
 }
 
 const templates: { id: PDFTemplateId; name: string; description: string }[] = [
@@ -72,6 +73,7 @@ export default function PreviewStep({
   formData,
   templateId,
   onTemplateChange,
+  onSaved,
 }: PreviewStepProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -116,6 +118,7 @@ export default function PreviewStep({
       const data = await res.json();
       if (data.success) {
         setSavedId(data.id);
+        onSaved(data.id);
         setSaveMessage("CV başarıyla kaydedildi!");
       } else {
         setSaveMessage(data.error || "Kaydetme başarısız. Giriş yapmayı deneyin.");

@@ -9,6 +9,7 @@ import ExperienceStep from "@/components/create-cv/ExperienceStep";
 import EducationStep from "@/components/create-cv/EducationStep";
 import SkillsStep from "@/components/create-cv/SkillsStep";
 import PreviewStep from "@/components/create-cv/PreviewStep";
+import PDFCVImport from "@/components/create-cv/PDFCVImport";
 import LinkedInUpload from "@/components/LinkedInUpload";
 import LinkedInManualForm from "@/components/LinkedInManualForm";
 import { CVScoreWidget } from "@/components/create-cv/CVScoreWidget";
@@ -143,6 +144,7 @@ function CreateCVContent() {
   >("modern");
   const [cvLang, setCvLang] = useState<"tr" | "en">("tr");
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [beforeImport, setBeforeImport] = useState<CreateCVFormData | null>(null);
 
   // LinkedIn import state
   const [showLinkedInImport, setShowLinkedInImport] = useState(false);
@@ -207,10 +209,8 @@ function CreateCVContent() {
     switch (currentStep) {
       case 0:
         return (
-          personalInfo.fullName &&
-          personalInfo.title &&
-          personalInfo.email &&
-          personalInfo.phone
+          personalInfo.fullName.trim() &&
+          (!personalInfo.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalInfo.email))
         );
       case 1:
         return true;
@@ -269,10 +269,21 @@ function CreateCVContent() {
     handleLinkedInParsed(profile);
   };
 
+  const applyForm = (cv: CreateCVFormData) => {
+    setCvId(cv.id);
+    setCvTitle(cv.title);
+    setPersonalInfo(cv.personalInfo);
+    setExperiences(cv.experiences);
+    setEducations(cv.educations);
+    setSkills(cv.skills);
+    setTemplateId(cv.templateId);
+    setCvLang(cv.cvLang || "tr");
+  };
+
   return (
     <div className="max-w-6xl mx-auto flex gap-6">
       <div className="flex-1 min-w-0">
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex flex-col sm:flex-row gap-4 items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
             {isEdit ? "CV Düzenle" : "CV Oluştur"}
@@ -280,7 +291,7 @@ function CreateCVContent() {
           <p className="text-slate-600 dark:text-slate-400">
             {isEdit
               ? "Mevcut CV'nizi düzenleyin ve güncelleyin."
-              : "Sıfırdan profesyonel, ATS uyumlu CV oluşturun."}
+              : "PDF CV’nizi düzenleyin veya sıfırdan yeni bir CV oluşturun."}
           </p>
         </div>
 
@@ -312,10 +323,17 @@ function CreateCVContent() {
         </div>
       </div>
 
+      <div hidden={currentStep !== 0}><PDFCVImport
+        hasContent={Boolean(personalInfo.fullName || experiences.length || educations.length || skills.technical.length)}
+        canUndo={Boolean(beforeImport)}
+        onApply={(cv) => { setBeforeImport(formData); applyForm({ ...cv, id: undefined, title: undefined }); setShowLinkedInImport(false); }}
+        onUndo={() => { if (beforeImport) applyForm(beforeImport); setBeforeImport(null); }}
+      /></div>
+
       {/* LinkedIn Import Banner */}
       {!showLinkedInImport && !linkedInImported && currentStep === 0 && (
         <div className="mb-6 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-sky-900/20 border border-blue-200 dark:border-blue-800 rounded-sm p-5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-sm flex items-center justify-center">
                 <Linkedin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -490,12 +508,12 @@ function CreateCVContent() {
             formData={formData}
             templateId={templateId}
             onTemplateChange={setTemplateId}
+            onSaved={setCvId}
           />
         )}
       </div>
 
       {/* Navigation Buttons */}
-      {currentStep < 4 && (
         <div className="flex justify-between">
           <button
             type="button"
@@ -505,16 +523,15 @@ function CreateCVContent() {
           >
             ← Önceki
           </button>
-          <button
+          {currentStep < 4 && <button
             type="button"
             onClick={handleNext}
             disabled={!canProceed()}
             className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Sonraki →
-          </button>
+          </button>}
         </div>
-      )}
       </div>
 
       {/* Score Widget Sidebar (hidden on preview step and mobile) */}
